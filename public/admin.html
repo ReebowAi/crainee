@@ -1,0 +1,509 @@
+<!-- public/admin.html (Refreshed & Optimized Admin Environment) -->
+<li class="nav-item"><a href="#" class="nav-link" data-page="banners"><svg width="20"
+height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path
+d="M4 11V6a2 2 0 0 1 2-2h2"></path><path d="M13 6h3a2 2 0 0 1 2 2v2"></path><path
+d="M19 13v3a2 2 0 0 1-2 2h-2"></path><path d="M11 19H8a2 2 0 0 1-2-2v-2"></path><path
+d="M12 6v6h6"></path></svg><span>Ticker Banners</span></a></li>
+<li class="nav-item"><a href="#" class="nav-link" data-page="market"><svg width="20"
+height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line
+x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line
+x1="6" y1="20" x2="6" y2="14"></line></svg><span>Market Control</span></a></li>
+<li class="nav-item"><a href="#" class="nav-link" data-page="settings"><svg width="20"
+height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle
+cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0
+2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2
+2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 21.41a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2
+0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1
+2-2h.09A1.65 1.65 0 0 0 4.68 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1
+2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2
+2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0
+2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2
+2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg><span>Settings</span></a></li>
+<li class="nav-item"><a href="#" class="nav-link" data-page="audit"><svg width="20"
+height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path
+d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14
+2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17"
+x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg><span>Audit
+Log</span></a></li>
+</ul>
+<div class="sidebar-footer">
+<div class="sidebar-version">Nexus Core v2.4-A</div>
+<small class="text-muted d-block text-center mt-2">&copy; 2026 Apex Grid. All rights reserved.</small>
+</div>
+</nav>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<!-- Main Content -->
+<main class="main-content" id="mainContent" style="position: relative; overflow: hidden;">
+<!-- Dynamic Ambient Environment Glow / Interactive Light Interaction Layer -->
+<div class="ambient-light-glow" id="ambientLightGlow" style="position: absolute; top: -50px; left: -50px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(59,130,246,0.07) 0%, rgba(147,51,234,0.03) 50%, transparent 80%); pointer-events: none; transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 0;"></div>
+
+<!-- Overview Page -->
+<section id="pageOverview" class="page active" data-page="overview" style="position: relative; z-index: 1;"> <header class="page-header">
+<div class="page-header-content">
+<h1 class="page-title">Command Overview</h1>
+<p class="page-subtitle">Real-time system telemetry & key liquidity metrics</p>
+</div>
+<div class="page-header-actions">
+<button class="btn btn-primary" id="exportUsersBtn">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline
+points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+Export Users
+</button>
+</div>
+</header>
+<div class="grid grid-4" id="adminSummaryCards">
+<article class="card summary-card">
+<div class="card-body">
+<div class="summary-icon bg-primary">👥</div>
+<div class="summary-info">
+<span class="summary-label">Total Users</span>
+<span class="summary-value" id="statTotalUsers">0</span>
+<span class="summary-change muted" id="statActiveUsers">0 active</span>
+</div>
+</div>
+</article>
+<article class="card summary-card">
+<div class="card-body">
+<div class="summary-icon bg-success">💰</div>
+<div class="summary-info">
+<span class="summary-label">Total Client Balance</span>
+<span class="summary-value" id="statTotalBalance">$0</span>
+<span class="summary-change muted" id="statAvgBalance">Avg: $0</span>
+</div>
+</div>
+</article>
+<article class="card summary-card">
+<div class="card-body">
+<div class="summary-icon bg-warning">📊</div>
+<div class="summary-info">
+<span class="summary-label">Total Transactions</span>
+<span class="summary-value" id="statTotalTx">0</span>
+<span class="summary-change muted" id="statBlockedTx">0 blocked</span>
+</div> </div>
+</article>
+<article class="card summary-card">
+<div class="card-body">
+<div class="summary-icon bg-info">⚡</div>
+<div class="summary-info">
+<span class="summary-label">Market Status</span>
+<span class="summary-value" id="statMarketStatus">Live</span>
+<span class="summary-change muted" id="statAssets">0 assets</span>
+</div>
+</div>
+</article>
+</div>
+<div class="grid grid-2-lg" style="margin-top: var(--space-6);">
+<article class="card">
+<div class="card-header"><h2 class="h4 m-0">Tier Distribution</h2></div>
+<div class="card-body" style="height: 300px;">
+<canvas id="tierDistributionChart"></canvas>
+</div>
+</article>
+<article class="card">
+<div class="card-header"><h2 class="h4 m-0">Transaction Volume (24h)</h2></div>
+<div class="card-body" style="height: 300px;">
+<canvas id="txVolumeChart"></canvas>
+</div>
+</article>
+</div>
+<article class="card" style="margin-top: var(--space-6);">
+<div class="card-header d-flex justify-between align-center"><h2 class="h4 m-0">Recent
+Admin Actions</h2><a href="#" class="btn btn-sm btn-ghost" data-page="audit">View
+All</a></div>
+<div class="card-body p-0">
+<div class="table-container">
+<table
+class="table"><thead><tr><th>Time</th><th>Admin</th><th>Action</th><th>Target</th><th>Details</th></tr></thead><tbody id="recentAuditBody"><tr><td colspan="5" class="text-center
+py-4">Loading telemetry logs...</td></tr></tbody></table>
+</div>
+</div>
+</article>
+</section> <!-- Users Management Page -->
+<section id="pageUsers" class="page" data-page="users" style="display: none; position: relative; z-index: 1;">
+<header class="page-header">
+<div class="page-header-content"><h1 class="page-title">User Management</h1><p
+class="page-subtitle">Inspect, modify, and manage client access parameters</p></div>
+<div class="page-header-actions">
+<div class="input-group" style="max-width: 300px;"><input type="text"
+class="form-control" id="userSearch" placeholder="Search accounts..."><span
+class="input-group-text">🔍</span></div>
+<select class="form-control form-control-sm" id="tierFilter" style="width: auto;"><option
+value="">All Tiers</option><option value="Bronze">Bronze</option><option
+value="Silver">Silver</option><option value="Gold">Gold</option><option
+value="VIP">VIP</option></select>
+<select class="form-control form-control-sm" id="statusFilter" style="width:
+auto;"><option value="">All Status</option><option value="active">Active</option><option
+value="frozen">Frozen</option></select>
+</div>
+</header>
+<article class="card">
+<div class="card-body p-0">
+<div class="table-container">
+<table class="table" id="usersTable">
+<thead>
+<tr><th>User</th><th>Tier</th><th>Balance</th><th>Status</th><th>Joined</th><th>Last
+Login</th><th>Actions</th></tr>
+</thead>
+<tbody id="usersBody">
+<tr><td colspan="7" class="text-center py-4">Loading database records...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="card-footer d-flex justify-between align-center">
+<span class="text-muted small" id="usersPaginationInfo">Showing 0 of 0 users</span>
+<div class="d-flex gap-2">
+<button class="btn btn-sm btn-ghost" id="prevPage" disabled>Previous</button>
+<button class="btn btn-sm btn-ghost" id="nextPage" disabled>Next</button>
+</div>
+</div>
+</article>
+</section> <!-- User Detail Modal -->
+<div class="modal-overlay" id="userDetailModal" role="dialog" aria-modal="true">
+<div class="modal modal-lg">
+<div class="modal-header"><h2 class="modal-title" id="userDetailTitle">User
+Details</h2><button class="btn btn-ghost btn-icon-only modal-close">&times;</button></div>
+<div class="modal-body">
+<div class="tabs mb-4" id="userDetailTabs" role="tablist">
+<button class="tab-btn active" role="tab" data-tab="overview"
+aria-selected="true">Overview</button>
+<button class="tab-btn" role="tab" data-tab="holdings"
+aria-selected="false">Holdings</button>
+<button class="tab-btn" role="tab" data-tab="transactions"
+aria-selected="false">Transactions</button>
+</div>
+<div class="tab-panels" id="userDetailPanels"></div>
+</div>
+</div>
+</div>
+<!-- Tiers Configuration Page -->
+<section id="pageTiers" class="page" data-page="tiers" style="display: none; position: relative; z-index: 1;">
+<header class="page-header"><div class="page-header-content"><h1
+class="page-title">Tier Configuration</h1><p class="page-subtitle">Manage tier constraints, leverage limits, and permissions</p></div></header>
+<div class="grid grid-2-lg">
+<article class="card">
+<div class="card-header"><h2 class="h4 m-0">Active Tier Matrix</h2></div>
+<div class="card-body">
+<div class="table-container">
+<table class="table" id="tierMatrixTable">
+<thead><tr><th>Feature</th><th>Bronze</th><th>Silver</th><th>Gold</th><th>VIP</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+</article>
+<article class="card">
+<div class="card-header"><h2 class="h4 m-0">Modify Tier Settings</h2></div>
+<div class="card-body">
+<form id="tierConfigForm">
+<div class="form-row"> <label class="form-label">Select Tier</label>
+<select class="form-control" id="editTierSelect"><option
+value="Bronze">Bronze</option><option value="Silver">Silver</option><option
+value="Gold">Gold</option><option value="VIP">VIP</option></select>
+</div>
+<div class="form-row"><label class="form-label">Minimum Balance</label><div
+class="input-group"><span class="input-group-text">$</span><input type="number"
+class="form-control" id="tierMinBalance" min="0" step="100"></div></div>
+<div class="form-row"><label class="form-label">Max Leverage</label><input
+type="number" class="form-control" id="tierMaxLeverage" min="1" max="50"></div>
+<div class="form-row"><label class="form-label">Daily Withdrawal Limit</label><div
+class="input-group"><span class="input-group-text">$</span><input type="number"
+class="form-control" id="tierDailyLimit" min="0" step="1000"></div></div>
+<div class="form-row"><label class="form-label">Max Positions</label><input
+type="number" class="form-control" id="tierMaxPositions" min="1"></div>
+<div class="form-row"><label class="form-label">Commission Rate (bps)</label><div
+class="input-group"><input type="number" class="form-control" id="tierCommission" min="0"
+max="100" step="1"><span class="input-group-text">bps</span></div></div>
+<div class="form-row"><label class="form-label">Features (comma
+separated)</label><input type="text" class="form-control" id="tierFeatures"
+placeholder="basic_charts,market_orders,limit_orders"></div>
+<div class="d-flex gap-2 justify-end mt-4"><button type="button" class="btn
+btn-primary" id="saveTierConfig">Save Configuration</button></div>
+</form>
+</div>
+</article>
+</div>
+</section>
+<!-- Withdrawal Blocks Page -->
+<section id="pageBlocks" class="page" data-page="blocks" style="display: none; position: relative; z-index: 1;">
+<header class="page-header"><div class="page-header-content"><h1
+class="page-title">Withdrawal Block Rules</h1><p class="page-subtitle">Configure compliance safeguards & automated triggers</p></div><div class="page-header-actions"><button class="btn
+btn-primary" id="addBlockBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line
+x1="5" y1="12" x2="19" y2="12"></line></svg> Add Rule</button></div></header>
+<article class="card">
+<div class="card-body p-0">
+<div class="table-container">
+<table class="table" id="blocksTable">
+<thead><tr><th>Name</th><th>Condition</th><th>Value</th><th>Error
+Message</th><th>Status</th><th>Actions</th></tr></thead> <tbody id="blocksBody"><tr><td colspan="6" class="text-center
+py-4">Loading rules engine...</td></tr></tbody>
+</table>
+</div>
+</div>
+</article>
+<!-- Block Rule Modal -->
+<div class="modal-overlay" id="blockModal" role="dialog" aria-modal="true">
+<div class="modal">
+<div class="modal-header"><h2 class="modal-title" id="blockModalTitle">Add
+Withdrawal Block</h2><button class="btn btn-ghost btn-icon-only
+modal-close">&times;</button></div>
+<div class="modal-body">
+<form id="blockForm">
+<input type="hidden" name="id" id="blockId">
+<div class="form-row"><label class="form-label">Rule Name</label><input
+type="text" class="form-control" name="name" required placeholder="e.g., High-Volume Security Rule"></div>
+<div class="form-row"><label class="form-label">Condition Type</label><select
+class="form-control" name="condition_type" id="blockConditionType"><option
+value="amount_threshold">Amount Threshold</option><option value="tier_restriction">Tier
+Restriction</option><option value="frequency_limit">Frequency Limit</option><option
+value="manual_flag">Manual Flag</option><option value="compliance">Compliance
+Review</option></select></div>
+<div id="conditionConfig"></div>
+<div class="form-row"><label class="form-label">Error Message (displayed to client)</label><textarea class="form-control" name="error_message" rows="3" required
+placeholder="Custom alert notice shown during restriction..."></textarea></div>
+<div class="form-row"><div class="form-check"><input type="checkbox"
+class="form-check-input" name="is_active" id="blockActive" checked><label
+class="form-check-label" for="blockActive">Active</label></div></div>
+</form>
+</div>
+<div class="modal-footer"><button class="btn btn-secondary
+modal-close">Cancel</button><button class="btn btn-primary" id="saveBlock">Save
+Rule</button></div>
+</div>
+</div>
+</section>
+<!-- Ticker Banners Page -->
+<section id="pageBanners" class="page" data-page="banners" style="display: none; position: relative; z-index: 1;"> <header class="page-header"><div class="page-header-content"><h1
+class="page-title">Ticker Banners</h1><p class="page-subtitle">Configure real-time marquee notifications</p></div><div class="page-header-actions"><button class="btn btn-primary"
+id="addBannerBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line
+x1="5" y1="12" x2="19" y2="12"></line></svg> Add Banner</button></div></header>
+<article class="card">
+<div class="card-body p-0">
+<div class="table-container">
+<table class="table" id="bannersTable">
+<thead><tr><th>Template</th><th>Username Pattern</th><th>Amount
+Range</th><th>Interval</th><th>Banks</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody id="bannersBody"><tr><td colspan="7" class="text-center
+py-4">Loading active feeds...</td></tr></tbody>
+</table>
+</div>
+</div>
+</article>
+<!-- Banner Modal -->
+<div class="modal-overlay" id="bannerModal" role="dialog" aria-modal="true">
+<div class="modal">
+<div class="modal-header"><h2 class="modal-title" id="bannerModalTitle">Add
+Banner</h2><button class="btn btn-ghost btn-icon-only modal-close">&times;</button></div>
+<div class="modal-body">
+<form id="bannerForm">
+<input type="hidden" name="id" id="bannerId">
+<div class="form-row"><label class="form-label">Message Template</label><input
+type="text" class="form-control" name="message_template" required placeholder="User
+{username} successfully secured ${amount} via {bank} {time_ago}"></div>
+<div class="form-row"><label class="form-label">Username Pattern</label><select
+class="form-control" name="username_pattern" id="bannerUsernamePattern"><option
+value="User {masked_email}">User {masked_email}</option><option value="Trader
+{random_id}">Trader {random_id}</option><option value="Investor {masked_email}">Investor
+{masked_email}</option><option value="Client {random_id}">Client
+{random_id}</option><option
+value="{first_initial}{last_name}{random_num}">J.Doe123</option></select></div>
+<div class="form-row"><label class="form-label">Amount Range</label><div
+class="d-flex gap-3"><div class="input-group flex-1"><span class="input-group-text">Min
+$</span><input type="number" class="form-control" name="amount_range_min" min="0"
+step="1000"></div><div class="input-group flex-1"><span class="input-group-text">Max
+$</span><input type="number" class="form-control" name="amount_range_max" min="0"
+step="10000"></div></div></div> <div class="form-row"><label class="form-label">Interval (seconds)</label><input
+type="number" class="form-control" name="interval_seconds" min="5" max="300"
+value="30"></div>
+<div class="form-row"><label class="form-label">Gateways (one per
+line)</label><textarea class="form-control" name="banks" rows="4"
+placeholder="Apex Vault&#10;Global Reserve&#10;Prime Custody&#10;Nexus Clearing"></textarea></div>
+<div class="form-row"><div class="form-check"><input type="checkbox"
+class="form-check-input" name="is_active" id="bannerActive" checked><label
+class="form-check-label" for="bannerActive">Active</label></div></div>
+</form>
+</div>
+<div class="modal-footer"><button class="btn btn-secondary
+modal-close">Cancel</button><button class="btn btn-primary" id="saveBanner">Save
+Banner</button></div>
+</div>
+</div>
+<!-- Test Banner -->
+<article class="card" style="margin-top: var(--space-6);">
+<div class="card-header"><h2 class="h4 m-0">Test Notification Broadcast</h2></div>
+<div class="card-body">
+<form id="testBannerForm" class="d-flex gap-2 flex-wrap">
+<input type="text" class="form-control flex-1" id="testMessage" placeholder="Custom
+broadcast message..." style="min-width: 300px;">
+<button type="submit" class="btn btn-primary">Broadcast</button>
+</form>
+</div>
+</article>
+</section>
+<!-- Market Control Page -->
+<section id="pageMarket" class="page" data-page="market" style="display: none; position: relative; z-index: 1;">
+<header class="page-header"><div class="page-header-content"><h1
+class="page-title">Market Control</h1><p class="page-subtitle">Direct market engine controls & liquidity overrides</p></div></header>
+<div class="grid grid-3">
+<article class="card">
+<div class="card-header"><h2 class="h4 m-0">Engine Status</h2></div>
+<div class="card-body">
+<div class="d-flex justify-between align-center mb-4 p-4 bg-gray-50
+rounded-lg"><div><span class="text-muted">Status</span><h3 id="marketStatusText"
+class="fw-bold">Running</h3></div><span class="badge badge-success"
+id="marketStatusBadge">LIVE</span></div> <div class="account-info">
+<div class="account-row"><span>Update Interval</span><strong
+id="marketInterval">500ms</strong></div>
+<div class="account-row"><span>Volatility Multiplier</span><strong
+id="marketVolatility">1.0x</strong></div>
+<div class="account-row"><span>Active Symbols</span><strong
+id="marketActiveAssets">15</strong></div>
+</div>
+</div>
+</article>
+<article class="card">
+<div class="card-header"><h2 class="h4 m-0">Manual Operations</h2></div>
+<div class="card-body">
+<div class="d-flex flex-column gap-3">
+<button class="btn btn-warning" id="pauseMarketBtn"><svg width="16" height="16"
+viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4"
+width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Pause
+Engine</button>
+<button class="btn btn-primary" id="resumeMarketBtn" disabled><svg width="16"
+height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon
+points="5 3 19 12 5 21 5 3"></polygon></svg> Resume Engine</button>
+<button class="btn btn-secondary" id="volatilitySpikeBtn2"><svg width="16"
+height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline
+points="13 2 3 14 13 14"></polyline><path d="M13 14v8"></path><line x1="20" y1="9" x2="20"
+y2="15"></line></svg> Trigger Liquidity Spike</button>
+<button class="btn btn-secondary" id="resetMarketBtn"><svg width="16" height="16"
+viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1
+0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg> Reset All
+Prices</button>
+</div>
+</div>
+</article>
+<article class="card">
+<div class="card-header"><h2 class="h4 m-0">Symbol Overrides</h2></div>
+<div class="card-body">
+<div class="table-container" style="max-height: 300px; overflow-y: auto;">
+<table class="table"
+id="assetOverridesTable"><thead><tr><th>Symbol</th><th>Current</th><th>Override
+Price</th><th>Actions</th></tr></thead><tbody id="assetOverridesBody"><tr><td colspan="4"
+class="text-center py-4">Loading overrides...</td></tr></tbody></table>
+</div>
+</div>
+</article>
+</div> </section>
+<!-- Settings Page -->
+<section id="pageSettings" class="page" data-page="settings" style="display: none; position: relative; z-index: 1;">
+<header class="page-header"><div class="page-header-content"><h1
+class="page-title">System Settings</h1><p class="page-subtitle">Global infrastructure configuration</p></div></header>
+<article class="card">
+<div class="card-header"><h2 class="h4 m-0">General Configuration</h2></div>
+<div class="card-body">
+<form id="settingsForm">
+<div class="grid grid-2">
+<div class="form-row"><label class="form-label">Platform Name</label><input
+type="text" class="form-control" name="simulation_name" value="Apex Grid Nexus"></div>
+<div class="form-row"><label class="form-label">Default Virtual Balance</label><div
+class="input-group"><span class="input-group-text">$</span><input type="number"
+class="form-control" name="default_virtual_balance" min="0" step="1000"></div></div>
+<div class="form-row"><label class="form-label">Max Leverage Limit</label><input
+type="number" class="form-control" name="max_leverage" min="1" max="100"></div>
+<div class="form-row"><label class="form-label">Trading Hours
+Active</label><select class="form-control" name="trading_hours_enabled"><option
+value="true">Yes</option><option value="false">No</option></select></div>
+</div>
+</form>
+</div>
+</article>
+<article class="card" style="margin-top: var(--space-6);">
+<div class="card-header"><h2 class="h4 m-0">Engine Parameters</h2></div>
+<div class="card-body">
+<form id="marketSettingsForm">
+<div class="grid grid-3">
+<div class="form-row"><label class="form-label">Tick Interval (ms)</label><input type="number" class="form-control" name="price_update_interval_ms"
+min="100" max="5000" step="100"></div>
+<div class="form-row"><label class="form-label">Volume Fluctuation
+(%)</label><input type="number" class="form-control" name="volume_fluctuation_pct" min="1"
+max="50"></div>
+<div class="form-row"><label class="form-label">Max Price Variance
+(%)</label><input type="number" class="form-control" name="max_price_change_pct"
+min="0.1" max="20" step="0.1"></div>
+</div> <div class="grid grid-2" style="margin-top: var(--space-4);">
+<div class="form-row"><div class="form-check form-check-inline"><input
+type="checkbox" class="form-check-input" name="enable_order_book" id="enable_order_book"
+checked><label class="form-check-label" for="enable_order_book">Enable Order
+Book</label></div></div>
+<div class="form-row"><div class="form-check form-check-inline"><input
+type="checkbox" class="form-check-input" name="enable_notifications"
+id="enable_notifications" checked><label class="form-check-label"
+for="enable_notifications">Enable Notifications</label></div></div>
+<div class="form-row"><label class="form-label">Banner Frequency
+(ms)</label><input type="number" class="form-control" name="notification_banner_interval"
+min="5000" max="300000" step="5000"></div>
+</div>
+<div class="d-flex gap-2 justify-end mt-4"><button type="button" class="btn
+btn-primary" id="saveSettings">Save All Settings</button></div>
+</form>
+</div>
+</article>
+</section>
+<!-- Audit Log Page -->
+<section id="pageAudit" class="page" data-page="audit" style="display: none; position: relative; z-index: 1;">
+<header class="page-header"><div class="page-header-content"><h1
+class="page-title">Audit Log</h1><p class="page-subtitle">Immutable audit trail of administrator actions</p></div><div class="page-header-actions"><button class="btn btn-secondary"
+id="exportAuditBtn">Export CSV</button></div></header>
+<article class="card">
+<div class="card-body p-0">
+<div class="table-container">
+<table class="table" id="auditTable">
+<thead><tr><th>Time</th><th>Admin</th><th>Action</th><th>Target</th><th>Details</th></tr></thead>
+<tbody id="auditBody"><tr><td colspan="5" class="text-center py-4">Loading audit ledger...</td></tr></tbody>
+</table>
+</div>
+<div class="card-footer d-flex justify-between align-center">
+<span class="text-muted small" id="auditPaginationInfo">Showing 0 of 0 entries</span>
+<div class="d-flex gap-2">
+<button class="btn btn-sm btn-ghost" id="auditPrevPage" disabled>Previous</button>
+<button class="btn btn-sm btn-ghost" id="auditNextPage" disabled>Next</button>
+</div>
+</div>
+</div>
+</article>
+</section>
+</main>
+</div>
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container" aria-live="polite"></div>
+<!-- Scripts -->
+<script src="/js/websocket.js"></script>
+<script src="/js/charts.js"></script>
+<script src="/js/admin.js"></script>
+<script>
+// Dynamic light interaction handler for ambient environment simulation
+window.addEventListener('mousemove', (e) => {
+  const glow = document.getElementById('ambientLightGlow');
+  if (glow) {
+    const x = e.clientX;
+    const y = e.clientY;
+    glow.style.transform = `translate(${x * 0.05}px, ${y * 0.05}px)`;
+  }
+});
+
+window.addEventListener('load', () => {
+setTimeout(() => {
+const loader = document.getElementById('loadingScreen');
+if (loader) loader.style.display = 'none';
+const app = document.getElementById('app');
+if (app) app.style.display = 'grid';
+}, 500);
+});
+</script>
+</body>
+</html>
