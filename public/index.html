@@ -187,6 +187,23 @@
             transform: translateY(-1px);
         }
 
+        .auth-switch {
+            margin-top: 1.25rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .auth-switch a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-switch a:hover {
+            text-decoration: underline;
+        }
+
         .disclosures {
             margin-top: 2rem;
             padding-top: 1.5rem;
@@ -261,8 +278,9 @@
 
         <main class="login-body">
             <div class="salutation" id="salutation">Good morning</div>
-            <p class="salutation-sub">Sign on to access your secure trading dashboard</p>
+            <p class="salutation-sub" id="formSubtitle">Sign on to access your secure trading dashboard</p>
             
+            <!-- LOGIN FORM -->
             <form id="loginForm" novalidate>
                 <div class="form-row">
                     <label for="email" class="form-label">Email Address</label>
@@ -279,7 +297,7 @@
                     <div id="password-error" class="form-text error" aria-live="polite"></div>
                 </div>
                 
-                <div class="form-row">
+                <div class="form-row" id="rememberRow">
                     <div class="checkbox-wrapper">
                         <label for="remember">
                             <input type="checkbox" id="remember" name="remember">
@@ -290,6 +308,40 @@
                 </div>
                 
                 <button type="submit" class="btn btn-primary" id="signOnBtn">Sign on</button>
+
+                <div class="auth-switch">
+                    <span>New to Crainee?</span> <a href="#" id="switchModeRegister">Create account</a>
+                </div>
+            </form>
+
+            <!-- REGISTER FORM (Hidden by default) -->
+            <form id="registerForm" style="display: none;" novalidate>
+                <div class="form-row">
+                    <label for="regFullName" class="form-label">Full Name</label>
+                    <input type="text" id="regFullName" name="fullName" class="form-control" required placeholder="John Doe" aria-describedby="reg-name-error">
+                    <div id="reg-name-error" class="form-text error" aria-live="polite"></div>
+                </div>
+
+                <div class="form-row">
+                    <label for="regEmail" class="form-label">Email Address</label>
+                    <input type="email" id="regEmail" name="email" class="form-control" autocomplete="email" required placeholder="investor@domain.com" aria-describedby="reg-email-error">
+                    <div id="reg-email-error" class="form-text error" aria-live="polite"></div>
+                </div>
+                
+                <div class="form-row">
+                    <label for="regPassword" class="form-label">Password</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="regPassword" name="password" class="form-control" autocomplete="new-password" required placeholder="Create a password" aria-describedby="reg-password-error">
+                        <button type="button" class="password-toggle" id="toggleRegPassword" aria-label="Show password">Show</button>
+                    </div>
+                    <div id="reg-password-error" class="form-text error" aria-live="polite"></div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="registerBtn">Create Account</button>
+
+                <div class="auth-switch">
+                    <span>Already have an account?</span> <a href="#" id="switchModeLogin">Sign on</a>
+                </div>
             </form>
 
             <div class="disclosures">
@@ -335,13 +387,74 @@
             const salutationEl = document.getElementById('salutation');
             if(salutationEl) salutationEl.textContent = salutation;
 
-            // Password toggle (fixed identifier syntax)
+            // Password toggles
             const toggle = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
             toggle?.addEventListener('click', () => {
                 const type = passwordInput.type === 'password' ? 'text' : 'password';
                 passwordInput.type = type;
                 toggle.textContent = type === 'password' ? 'Show' : 'Hide';
+            });
+
+            const toggleReg = document.getElementById('toggleRegPassword');
+            const regPasswordInput = document.getElementById('regPassword');
+            toggleReg?.addEventListener('click', () => {
+                const type = regPasswordInput.type === 'password' ? 'text' : 'password';
+                regPasswordInput.type = type;
+                toggleReg.textContent = type === 'password' ? 'Show' : 'Hide';
+            });
+
+            // Form switching logic (Login <-> Register)
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const formSubtitle = document.getElementById('formSubtitle');
+
+            document.getElementById('switchModeRegister')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+                formSubtitle.textContent = 'Register to create your secure trading profile';
+            });
+
+            document.getElementById('switchModeLogin')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                registerForm.style.display = 'none';
+                loginForm.style.display = 'block';
+                formSubtitle.textContent = 'Sign on to access your secure trading dashboard';
+            });
+
+            // Register form submission handling
+            registerForm?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fullName = document.getElementById('regFullName').value;
+                const email = document.getElementById('regEmail').value;
+                const password = document.getElementById('regPassword').value;
+                const errorEl = document.getElementById('reg-password-error');
+                
+                errorEl.textContent = '';
+
+                try {
+                    const res = await fetch('/api/auth/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fullName, email, password })
+                    });
+                    const data = await res.json();
+                    
+                    if (!res.ok) {
+                        errorEl.textContent = data.error || 'Registration failed';
+                        return;
+                    }
+
+                    // Save token / session storage matching auth.js conventions if applicable, then redirect or notify
+                    if (data.token) {
+                        localStorage.setItem('crainee_token', data.token);
+                    }
+                    alert('Account successfully created! Redirecting to dashboard...');
+                    window.location.href = '/';
+                } catch (err) {
+                    errorEl.textContent = 'Network error. Please try again.';
+                }
             });
 
             // Forgot password handler fallback if function exists or simple handler
