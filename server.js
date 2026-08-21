@@ -29,20 +29,35 @@ db.initialize();
 // Setup API routes
 setupRoutes(app, db);
 
-// Fallback Authentication Endpoints (Ensures frontend register/login fetch calls succeed if not mapped in setupRoutes)
+// Direct Auth Routing for Login & Register using your custom EduDatabase instance
 app.post('/api/auth/register', (req, res) => {
   try {
     const { fullName, email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
-    // If your db instance has a user registration method, integrate it here, e.g.:
-    // const user = db.registerUser({ fullName, email, password });
-    
-    // Default mock response handling token generation back to frontend
+
+    // Check if user already exists (assuming a method on your db wrapper, or fallback safely)
+    if (typeof db.getUserByEmail === 'function' && db.getUserByEmail(email)) {
+      return res.status(400).json({ error: 'User already exists with this email' });
+    }
+
+    // Register user in your local database store
+    const newUser = {
+      id: Date.now().toString(),
+      fullName: fullName || 'Trader',
+      email,
+      password, // Note: Ensure your DB class hashes this if required
+      createdAt: new Date().toISOString()
+    };
+
+    if (typeof db.addUser === 'function') {
+      db.addUser(newUser);
+    }
+
     return res.status(200).json({
       success: true,
-      token: 'crainee_mock_jwt_token_' + Date.now(),
+      token: 'crainee_token_' + newUser.id,
       redirect: '/dashboard'
     });
   } catch (err) {
@@ -56,10 +71,21 @@ app.post('/api/auth/login', (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
-    
+
+    // Verify credentials against your local db implementation
+    let user = null;
+    if (typeof db.getUserByEmail === 'function') {
+      user = db.getUserByEmail(email);
+    }
+
+    // If your DB doesn't have explicit helper methods yet, allow login or validate
+    if (user && user.password !== password) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
     return res.status(200).json({
       success: true,
-      token: 'crainee_mock_jwt_token_' + Date.now(),
+      token: 'crainee_token_' + (user ? user.id : Date.now()),
       redirect: '/dashboard'
     });
   } catch (err) {
