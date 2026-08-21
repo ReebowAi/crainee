@@ -423,9 +423,39 @@
                 formSubtitle.textContent = 'Sign on to access your secure trading dashboard';
             });
 
+            // Login form submission handling to prevent refresh loops
+            loginForm?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const errorEl = document.getElementById('password-error');
+                errorEl.textContent = '';
+
+                try {
+                    const res = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const data = await res.json();
+                    
+                    if (!res.ok) {
+                        errorEl.textContent = data.error || 'Login failed';
+                        return;
+                    }
+
+                    if (data.token) {
+                        localStorage.setItem('crainee_token', data.token);
+                    }
+                    window.location.href = data.redirect || '/dashboard';
+                } catch (err) {
+                    errorEl.textContent = 'Network error. Please try again.';
+                }
+            });
+
             // Register form submission handling
             registerForm?.addEventListener('submit', async (e) => {
-                e.preventDefault();
+                e.preventDefault(); // Prevents default refresh loop behavior
                 const fullName = document.getElementById('regFullName').value;
                 const email = document.getElementById('regEmail').value;
                 const password = document.getElementById('regPassword').value;
@@ -446,18 +476,17 @@
                         return;
                     }
 
-                    // Save token / session storage matching auth.js conventions if applicable, then redirect or notify
                     if (data.token) {
                         localStorage.setItem('crainee_token', data.token);
                     }
                     alert('Account successfully created! Redirecting to dashboard...');
-                    window.location.href = '/';
+                    window.location.href = data.redirect || '/dashboard';
                 } catch (err) {
                     errorEl.textContent = 'Network error. Please try again.';
                 }
             });
 
-            // Forgot password handler fallback if function exists or simple handler
+            // Forgot password handler fallback
             document.getElementById('forgotLink')?.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (typeof showToast === 'function') {
