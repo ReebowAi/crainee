@@ -3,8 +3,8 @@
  * Prevents server crashes from unexpected runtime exceptions.
  */
 
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
 class ErrorSentinel {
   init() {
@@ -39,4 +39,4 @@ class ErrorSentinel {
   }
 }
 
-export default new ErrorSentinel();
+module.exports = new ErrorSentinel();
