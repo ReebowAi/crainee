@@ -3,13 +3,14 @@
  * Executes automated database cleanup, log rotation, and storage optimization.
  */
 
-import fs from 'fs';
-import path from 'path';
-import db from '../database/db.js';
+const fs = require('fs');
+const path = require('path');
+const { EduDatabase } = require('../database/db');
 
 class AutoMaintenanceService {
   constructor() {
     this.timer = null;
+    this.db = new EduDatabase();
   }
 
   start() {
@@ -30,6 +31,9 @@ class AutoMaintenanceService {
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
+    }
+    if (this.db) {
+      this.db.close();
     }
     console.log('[Maintenance] Auto-maintenance supervisor paused.');
   }
@@ -52,9 +56,9 @@ class AutoMaintenanceService {
     console.log('[Maintenance] Optimizing SQLite database indices and reclaiming space...');
     try {
       // Analyze tables to optimize query performance
-      db.exec('ANALYZE;');
+      this.db.exec('ANALYZE;');
       // Reclaim unused space from deleted or modified rows
-      db.exec('VACUUM;');
+      this.db.exec('VACUUM;');
       console.log('[Maintenance] Database vacuum and analysis complete.');
     } catch (err) {
       console.error('[Maintenance Error] Database optimization failed:', err.message);
@@ -65,11 +69,11 @@ class AutoMaintenanceService {
     console.log('[Maintenance] Checking transaction audit logs and system cache tables...');
     try {
       // Keep transaction logs clean by retaining the last 10,000 global records
-      const checkStmt = db.prepare('SELECT COUNT(*) as count FROM transactions');
+      const checkStmt = this.db.prepare('SELECT COUNT(*) as count FROM transactions');
       const { count } = checkStmt.get();
 
       if (count > 10000) {
-        db.exec(`
+        this.db.exec(`
           DELETE FROM transactions 
           WHERE id NOT IN (
             SELECT id FROM transactions ORDER BY created_at DESC LIMIT 10000
@@ -91,7 +95,7 @@ class AutoMaintenanceService {
     if (!fs.existsSync(logDir)) return;
 
     try {
-      const files = fs.readdirNames ? fs.readdirSync(logDir) : fs.readdirSync(logDir);
+      const files = fs.readdirSync(logDir);
       
       for (const file of files) {
         const filePath = path.join(logDir, file);
@@ -111,4 +115,4 @@ class AutoMaintenanceService {
   }
 }
 
-export default new AutoMaintenanceService();
+module.exports = new AutoMaintenanceService();
