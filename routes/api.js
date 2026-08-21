@@ -1,4 +1,5 @@
 // routes/api.js - REST API endpoints
+const path = require('path');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 
