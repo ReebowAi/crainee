@@ -1,4 +1,32 @@
-<!-- public/admin.html (Refreshed & Optimized Admin Environment) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crainee Admin Dashboard</title>
+    <!-- Added main stylesheet link to fix the unstyled/naked layout -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<!-- Loading Screen -->
+<div id="loadingScreen" style="position: fixed; inset: 0; background: #0f172a; display: flex; align-items: center; justify-content: center; z-index: 9999; color: white; font-family: sans-serif;">
+    <div style="text-align: center;">
+        <h2>Loading Crainee Admin...</h2>
+    </div>
+</div>
+
+<div id="app" style="display: none; min-height: 100vh;">
+<!-- Sidebar / Navigation -->
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-brand">
+    <span class="brand-text">Crainee Admin</span>
+</div>
+<nav class="sidebar-nav">
+<ul class="list-unstyled">
+<li class="nav-item"><a href="#" class="nav-link active" data-page="overview"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Overview</span></a></li>
+<li class="nav-item"><a href="#" class="nav-link" data-page="users"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg><span>Users</span></a></li>
+<li class="nav-item"><a href="#" class="nav-link" data-page="tiers"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Tier Config</span></a></li>
+<li class="nav-item"><a href="#" class="nav-link" data-page="blocks"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg><span>Withdrawal Blocks</span></a></li>
 <li class="nav-item"><a href="#" class="nav-link" data-page="banners"><svg width="20"
 height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path
 d="M4 11V6a2 2 0 0 1 2-2h2"></path><path d="M13 6h3a2 2 0 0 1 2 2v2"></path><path
