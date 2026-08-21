@@ -3,7 +3,7 @@ const express = require('express');
 const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
-const Database = require('./database/db');
+const { EduDatabase } = require('./database/db'); // Updated to use destructured class import matching your database file
 const { setupRoutes } = require('./routes/api');
 const { setupWebSocket } = require('./websocket/ws-handler');
 const { startMarketSimulator } = require('./services/market-simulator');
@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(require('cors')());
 
 // Initialize database
-const db = new Database();
+const db = new EduDatabase();
 db.initialize();
 
 // Setup API routes
