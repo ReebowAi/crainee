@@ -1,12 +1,19 @@
 // database/db.js - SQLite database for Crainee Enterprise Platform
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 
 class EduDatabase {
   constructor() {
-    this.db = new Database(path.join(__dirname, '..', 'data', 'crainee_platform.db'));
+    // Ensure the data directory exists before opening the database to prevent startup crashes on Render
+    const dataDir = path.join(__dirname, '..', 'data');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+
+    this.db = new Database(path.join(dataDir, 'crainee_platform.db'));
     this.enableWAL();
   }
 
