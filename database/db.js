@@ -134,15 +134,18 @@ class EduDatabase {
   }
 
   seedDefaults() {
-    // Default admin user
-    const adminExists = this.db.prepare('SELECT id FROM users WHERE email = ?').get('admin@crainee.internal');
+    // Default admin user (reads securely from environment variables with fallbacks)
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@crainee.internal';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+    const adminExists = this.db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
     if (!adminExists) {
       const adminId = uuidv4();
-      const hash = bcrypt.hashSync('admin123', 10);
+      const hash = bcrypt.hashSync(adminPassword, 10);
       this.db.prepare(`
         INSERT INTO users (id, email, password_hash, full_name, tier, virtual_balance, is_admin)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(adminId, 'admin@crainee.internal', hash, 'Platform Administrator', 'VIP', 1000000, 1);
+      `).run(adminId, adminEmail, hash, 'Platform Administrator', 'VIP', 1000000, 1);
     }
 
     // Default assets
