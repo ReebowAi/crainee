@@ -166,6 +166,176 @@ function setupRoutes(app, db) {
     const updatedUser = db.getUserById(req.user.id);
     res.json({ success: true, balance: updatedUser.virtual_balance, executionPrice: asset.current_price });
   });
+
+  // ===== WITHDRAWAL ROUTES (with blocking) =====
+  app.post('/api/withdrawal/request', authMiddleware, (req, res) => {
+    const { amount, bankName } = req.body;
+    const user = db.getUserById(req.user.id);
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Valid amount required' });
+    }
+    
+    if (amount > user.virtual_balance) {
+      return res.status(400).json({ error: 'Insufficient balance' });
+    }
+    
+    // Check withdrawal blocks
+    const block = db.checkWithdrawalBlock(user.tier, amount);
+    
+    if (block) {
+      // Record blocked transaction
+      db.recordTransaction(req.user.id, null, 'withdrawal_blocked', 0, 0, amount, 'blocked', block.error_message, {
+        compliance_message: block.compliance_message,
+        tier: user.tier,
+        bankName: bankName || 'Unknown Institution'
+      });
+      
+      return res.status(403).json({
+        blocked: true,
+        error: block.error_message,
+        complianceMessage: block.compliance_message,
+        tier: user.tier,
+        attemptedAmount: amount
+      });
+    }
+    
+    // Process withdrawal (enterprise simulation - deduct balance)
+    db.db.prepare('UPDATE users SET virtual_balance = virtual_balance - ? WHERE id = ?').run(amount, req.user.id);
+    
+    db.recordTransaction(req.user.id, null, 'withdrawal', 0, 0, amount, 'completed', null, {
+      bankName: bankName || 'Unknown Institution'
+    });
+    
+    // Generate ticker message for other users
+    const maskedEmail = user.email.replace(/(.{2}).*(@.*)/, '$1***$2');
+    const tickerMsg = `Account ${maskedEmail} executed settlement of $${amount.toLocaleString()} via ${bankName || 'External Institution'}`;
+    db.addTickerMessage(tickerMsg);
+    
+    const updatedUser = db.getUserById(req.user.id);
+    res.json({ success: true, balance: updatedUser.virtual_balance, message: 'Settlement executed successfully' });
+  });
+
+  // ===== ADMIN ROUTES =====
+  app.get('/api/admin/users', authMiddleware, adminMiddleware, (req, res) => {
+    const users = db.getAllUsers();
+    res.json({ users });
+  });
+
+  app.get('/api/admin/dashboard/stats', authMiddleware, adminMiddleware, (req, res) => {
+    const stats = {
+      totalUsers: db.db.prepare('SELECT COUNT(*) as count FROM users WHERE is_admin = 0').get().count,
+      totalVirtualBalance: db.db.prepare('SELECT SUM(virtual_balance) as total FROM users WHERE is_admin = 0').get().total || 0,
+      totalTransactions: db.db.prepare('SELECT COUNT(*) as count FROM transactions').get().count,
+      blockedWithdrawals: db.db.prepare("SELECT COUNT(*) as count FROM transactions WHERE type = 'withdrawal_blocked'").get().count,
+      activeAssets: db.db.prepare("SELECT COUNT(*) as count FROM assets").get().count,
+      tierDistribution: db.db.prepare(`
+        SELECT tier, COUNT(*) as count FROM users WHERE is_admin = 0 GROUP BY tier
+      `).all()
+    };
+    res.json({ stats });
+  });
+
+  app.post('/api/admin/users/:id/tier', authMiddleware, adminMiddleware, (req, res) => {
+    const { id } = req.params;
+    const { tier } = req.body;
+    const validTiers = ['Bronze', 'Silver', 'Gold', 'VIP'];
+    if (!validTiers.includes(tier)) {
+      return res.status(400).json({ error: 'Invalid tier' });
+    }
+    const user = db.updateUserTier(id, tier);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({ user });
+  });
+
+  app.post('/api/admin/users/:id/balance', authMiddleware, adminMiddleware, (req, res) => {
+    const { id } = req.params;
+    const { amount } = req.body;
+    if (typeof amount !== 'number') {
+      return res.status(400).json({ error: 'Valid amount required' });
+    }
+    const user = db.updateUserBalance(id, amount);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({ user });
+  });
+
+  // Admin settings
+  app.get('/api/admin/settings', authMiddleware, adminMiddleware, (req, res) => {
+    const settings = db.getSettings();
+    res.json({ settings });
+  });
+
+  app.put('/api/admin/settings/:key', authMiddleware, adminMiddleware, (req, res) => {
+    const { key } = req.params;
+    const { value } = req.body;
+    const setting = db.updateSetting(key, value);
+    if (!setting) return res.status(404).json({ error: 'Setting not found' });
+    res.json({ setting });
+  });
+
+  // Withdrawal blocks management
+  app.get('/api/admin/withdrawal-blocks', authMiddleware, adminMiddleware, (req, res) => {
+    const blocks = db.getWithdrawalBlocks();
+    res.json({ blocks });
+  });
+
+  app.post('/api/admin/withdrawal-blocks', authMiddleware, adminMiddleware, (req, res) => {
+    const { tier, minAmount, maxAmount, errorMessage, complianceMessage } = req.body;
+    if (!tier || !errorMessage) {
+      return res.status(400).json({ error: 'Tier and error message required' });
+    }
+    const block = db.addWithdrawalBlock(tier, minAmount || 0, maxAmount || 999999999, errorMessage, complianceMessage || '');
+    res.json({ block });
+  });
+
+  app.put('/api/admin/withdrawal-blocks/:id', authMiddleware, adminMiddleware, (req, res) => {
+    const { id } = req.params;
+    const block = db.updateWithdrawalBlock(id, req.body);
+    if (!block) return res.status(404).json({ error: 'Block not found' });
+    res.json({ block });
+  });
+
+  app.delete('/api/admin/withdrawal-blocks/:id', authMiddleware, adminMiddleware, (req, res) => {
+    const { id } = req.params;
+    db.deleteWithdrawalBlock(id);
+    res.json({ success: true });
+  });
+
+  // Ticker messages
+  app.get('/api/ticker/messages', (req, res) => {
+    const tickers = db.getActiveTickers();
+    res.json({ messages: tickers.map(t => t.message) });
+  });
+
+  app.post('/api/admin/ticker/add', authMiddleware, adminMiddleware, (req, res) => {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: 'Message required' });
+    const id = db.addTickerMessage(message);
+    res.json({ success: true, id });
+  });
+
+  app.post('/api/admin/ticker/generate', authMiddleware, adminMiddleware, (req, res) => {
+    const count = req.body.count || 5;
+    const messages = [];
+    for (let i = 0; i < count; i++) {
+      const msg = db.generateAITickerMessage();
+      db.addTickerMessage(msg);
+      messages.push(msg);
+    }
+    res.json({ messages });
+  });
+
+  // All transactions (admin view)
+  app.get('/api/admin/transactions', authMiddleware, adminMiddleware, (req, res) => {
+    const { limit = 500 } = req.query;
+    const transactions = db.getAllTransactions(parseInt(limit));
+    res.json({ transactions });
+  });
+
+  // Serve frontend for all other routes
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+  });
 }
 
 module.exports = { setupRoutes, authMiddleware, adminMiddleware };
