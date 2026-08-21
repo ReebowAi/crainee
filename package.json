@@ -1,0 +1,22 @@
+{
+  "name": "crainee-enterprise-platform",
+  "version": "1.0.0",
+  "description": "Enterprise-grade financial asset management and institutional liquidity network - Crainee",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "better-sqlite3": "^9.2.2",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "uuid": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
