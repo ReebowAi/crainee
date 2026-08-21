@@ -8,6 +8,11 @@ const { setupRoutes } = require('./routes/api');
 const { setupWebSocket } = require('./websocket/ws-handler');
 const { startMarketSimulator } = require('./services/market-simulator');
 
+// Import autonomy, self-healing, and maintenance services
+const AutoPilotService = require('./services/auto-pilot.js');
+const ErrorSentinel = require('./services/error-sentinel.js');
+const AutoMaintenanceService = require('./services/auto-maintenance.js');
+
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
@@ -30,6 +35,11 @@ setupWebSocket(wss, db);
 // Start market simulation (randomized price movements)
 startMarketSimulator(wss, db);
 
+// Initialize zero-touch background autonomy and self-maintenance engines
+ErrorSentinel.init();
+AutoPilotService.start();
+AutoMaintenanceService.start();
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`
@@ -45,6 +55,8 @@ server.listen(PORT, () => {
 // Graceful shutdown
 process.on('SIGINT', () => {
   console.log('\nShutting down gracefully...');
+  AutoPilotService.stop();
+  AutoMaintenanceService.stop();
   db.close();
   server.close(() => process.exit(0));
 });
