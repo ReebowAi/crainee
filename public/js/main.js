@@ -178,3 +178,303 @@ function renderAppShell() {
     </div>
   `;
 }
+      <!-- Ticker Banner -->
+      <div class="ticker-banner" id="ticker-banner" style="display: none;">
+        <div class="ticker-track" id="ticker-track"></div>
+      </div>
+      
+      <!-- Toast Container -->
+      <div class="toast-container" id="toast-container"></div>
+      
+      <!-- Mobile sidebar backdrop -->
+      <div class="sidebar-overlay" id="sidebar-backdrop"></div>
+    </div>
+  `;
+  
+  // Initialize event listeners after render
+  initializeShellEvents();
+  
+  // Show/hide auth UI based on login state
+  updateAuthUI();
+}
+
+function initializeShellEvents() {
+  // Sidebar toggle
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+  
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      sidebarBackdrop.classList.toggle('active');
+    });
+  }
+  
+  if (sidebarBackdrop) {
+    sidebarBackdrop.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      sidebarBackdrop.classList.remove('active');
+    });
+  }
+  
+  // Navigation links
+  document.querySelectorAll('[data-page]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const page = link.dataset.page;
+      window.App.router.navigate(`/${page}`);
+      
+      // Close mobile sidebar
+      sidebar.classList.remove('open');
+      sidebarBackdrop.classList.remove('active');
+    });
+  });
+  
+  // Logo home link
+  document.querySelector('.logo[data-link]')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    window.App.router.navigate('/dashboard');
+  });
+  
+  // Main nav tabs
+  document.querySelectorAll('.nav-tab[data-page]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      window.App.router.navigate(`/${tab.dataset.page}`);
+    });
+  });
+  
+  // User menu dropdown
+  const userMenu = document.querySelector('.user-menu');
+  if (userMenu) {
+    userMenu.addEventListener('click', (e) => {
+      if (e.target.closest('.dropdown-item')) {
+        const action = e.target.closest('.dropdown-item').dataset.action;
+        handleUserAction(action);
+      }
+    });
+  }
+}
+
+function updateAuthUI() {
+  const headerActions = document.getElementById('header-actions');
+  const sidebarUser = document.getElementById('sidebar-user');
+  const mainNav = document.getElementById('main-nav');
+  const adminTab = document.getElementById('admin-tab');
+  
+  if (window.App.user) {
+    // User logged in
+    headerActions.innerHTML = `
+      <div class="user-menu">
+        <button class="user-btn" aria-expanded="false" aria-haspopup="true">
+          <div class="user-avatar" id="header-avatar">${getInitials(window.App.user.fullName || window.App.user.email)}</div>
+          <div class="user-info">
+            <span class="user-name">${window.App.user.fullName || window.App.user.email}</span>
+            <span class="user-tier tier-${window.App.user.tier.toLowerCase()}">${window.App.user.tier}</span>
+          </div>
+        </button>
+        <div class="user-dropdown">
+          <button class="dropdown-item" data-action="settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"></path>
+            </svg>
+            Settings
+          </button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item danger" data-action="logout">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            Sign Out
+          </button>
+        </div>
+      </div>
+    `;
+    
+    // Sidebar user info
+    sidebarUser.style.display = 'flex';
+    document.getElementById('sidebar-avatar').textContent = getInitials(window.App.user.fullName || window.App.user.email);
+    document.getElementById('sidebar-name').textContent = window.App.user.fullName || window.App.user.email;
+    document.getElementById('sidebar-tier').textContent = window.App.user.tier;
+    document.getElementById('sidebar-tier').className = `user-tier tier-${window.App.user.tier.toLowerCase()}`;
+    
+    // Show main nav
+    mainNav.style.display = 'flex';
+    
+    // Show admin tab if admin
+    if (window.App.user.isAdmin) {
+      adminTab.style.display = 'block';
+    }
+    
+    // Show ticker banner
+    document.getElementById('ticker-banner').style.display = 'block';
+    
+    // Update active nav
+    updateActiveNav();
+  } else {
+    // Not logged in
+    headerActions.innerHTML = `
+      <a href="/login" class="btn btn-ghost" data-link>Sign In</a>
+      <a href="/register" class="btn btn-primary" data-link>Get Started</a>
+    `;
+    sidebarUser.style.display = 'none';
+    mainNav.style.display = 'none';
+    adminTab.style.display = 'none';
+    document.getElementById('ticker-banner').style.display = 'none';
+    
+    // Re-attach link listeners
+    document.querySelectorAll('[data-link]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.App.router.navigate(link.getAttribute('href'));
+      });
+    });
+  }
+}
+
+function updateActiveNav() {
+  const currentPath = window.location.pathname;
+  const page = currentPath.split('/')[1] || 'dashboard';
+  
+  document.querySelectorAll('[data-page]').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+  
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.page === page);
+  });
+}
+
+function getInitials(name) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function handleUserAction(action) {
+  switch (action) {
+    case 'settings':
+      window.App.router.navigate('/settings');
+      break;
+    case 'logout':
+      logout();
+      break;
+  }
+}
+
+async function logout() {
+  localStorage.removeItem('crainee_token');
+  localStorage.removeItem('crainee_user');
+  window.App.user = null;
+  window.App.token = null;
+  API.setToken(null);
+  
+  if (window.App.ws) {
+    window.App.ws.disconnect();
+  }
+  
+  window.Toast.success('Signed out successfully');
+  window.App.router.navigate('/login');
+}
+
+async function loadUserData() {
+  try {
+    const response = await API.get('/auth/me');
+    if (response.user) {
+      window.App.user = { ...window.App.user, ...response.user };
+      localStorage.setItem('crainee_user', JSON.stringify(window.App.user));
+      updateAuthUI();
+    }
+  } catch (e) {
+    console.error('Failed to load user data:', e);
+  }
+}
+
+function showPage(pageName) {
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  
+  // Get or create page component
+  let pageComponent = window.App.components[pageName];
+  const mainContent = document.getElementById('main-content');
+  
+  if (!pageComponent) {
+    pageComponent = createPageComponent(pageName);
+    window.App.components[pageName] = pageComponent;
+    mainContent.appendChild(pageComponent.element);
+  }
+  
+  pageComponent.element.classList.add('active');
+  window.App.currentPage = pageName;
+  
+  // Call onShow if exists
+  if (pageComponent.onShow) {
+    pageComponent.onShow();
+  }
+  
+  updateActiveNav();
+}
+
+function showAuthPage(pageName) {
+  const mainContent = document.getElementById('main-content');
+  mainContent.innerHTML = '';
+  
+  let pageComponent = window.App.components[pageName];
+  if (!pageComponent) {
+    pageComponent = createPageComponent(pageName);
+    window.App.components[pageName] = pageComponent;
+  }
+  
+  mainContent.appendChild(pageComponent.element);
+  pageComponent.element.classList.add('active');
+  window.App.currentPage = pageName;
+  
+  if (pageComponent.onShow) {
+    pageComponent.onShow();
+  }
+}
+
+function createPageComponent(pageName) {
+  const container = document.createElement('div');
+  container.className = 'page';
+  
+  let component;
+  switch (pageName) {
+    case 'dashboard':
+      component = new Dashboard(container);
+      break;
+    case 'markets':
+      component = new Markets(container);
+      break;
+    case 'portfolio':
+      component = new Portfolio(container);
+      break;
+    case 'trading':
+      component = new Trading(container);
+      break;
+    case 'admin':
+      component = new Admin(container);
+      break;
+    case 'settings':
+      component = new Settings(container);
+      break;
+    case 'login':
+      component = new Login(container);
+      break;
+    case 'register':
+      component = new Register(container);
+      break;
+    default:
+      component = { element: container, onShow: () => {} };
+  }
+  
+  return { element: container, ...component };
+}
+
+// Make functions globally available
+window.showPage = showPage;
+window.showAuthPage = showAuthPage;
+window.logout = logout;
+window.updateAuthUI = updateAuthUI;
