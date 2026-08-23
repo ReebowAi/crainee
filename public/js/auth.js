@@ -27,8 +27,8 @@ try {
 const res = await fetch('/api/auth/me', { credentials: 'include' });
 if (res.ok) {
 const data = await res.json();
-// Already logged in, redirect
-if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+// Already logged in, redirect safely
+if ((window.location.pathname === '/' || window.location.pathname === '/index.html') && data.user) {
 window.location.href = data.user.isAdmin ? '/admin' : '/dashboard';
 }
 }
@@ -64,13 +64,12 @@ throw new Error(result.error || 'Login failed');
 }
 this.showToast('Welcome back! Redirecting...', 'success');
 setTimeout(() => {
-window.location.href = result.user.isAdmin ? '/admin' : '/dashboard';
+const isAdmin = result.user && result.user.isAdmin;
+window.location.href = isAdmin ? '/admin' : '/dashboard';
 }, 800);
 } catch (err) {
 console.error('Login error:', err);
-if (!err.message.includes('Invalid credentials')) {
 this.showToast(err.message, 'error');
-}
 } finally {
 submitBtn.disabled = false;
 submitBtn.innerHTML = originalText;
@@ -117,9 +116,7 @@ window.location.href = '/dashboard';
 }, 800);
 } catch (err) {
 console.error('Registration error:', err);
-if (!err.message.includes('already registered')) {
 this.showToast(err.message, 'error');
-}
 } finally { 
 submitBtn.disabled = false;
 submitBtn.innerHTML = originalText;
