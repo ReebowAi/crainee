@@ -1,10 +1,10 @@
+// models/TickerMessage.js
 const mongoose = require('mongoose');
 
 const tickerMessageSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  message: { type: String, required: true },
-  is_active: { type: Number, default: 1 },
+  message: { type: String, required: true, trim: true },
+  is_active: { type: Boolean, default: true },
   created_at: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('TickerMessage', tickerMessageSchema);
+module.exports = mongoose.models.TickerMessage || mongoose.model('TickerMessage', tickerMessageSchema);
