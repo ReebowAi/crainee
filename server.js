@@ -24,104 +24,101 @@ app.use(require('cors')());
 
 // Initialize database
 const db = new EduDatabase();
-db.initialize();
 
-// Setup API routes
-setupRoutes(app, db);
-
-// Direct Auth Routing for Login & Register using your custom EduDatabase instance
-app.post('/api/auth/register', (req, res) => {
+async function startServer() {
   try {
-    const { fullName, email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
-
-    // Check if user already exists (assuming a method on your db wrapper, or fallback safely)
-    if (typeof db.getUserByEmail === 'function' && db.getUserByEmail(email)) {
-      return res.status(400).json({ error: 'User already exists with this email' });
-    }
-
-    // Register user in your local database store
-    const newUser = {
-      id: Date.now().toString(),
-      fullName: fullName || 'Trader',
-      email,
-      password, // Note: Ensure your DB class hashes this if required
-      createdAt: new Date().toISOString()
-    };
-
-    if (typeof db.addUser === 'function') {
-      db.addUser(newUser);
-    }
-
-    return res.status(200).json({
-      success: true,
-      token: 'crainee_token_' + newUser.id,
-      redirect: '/dashboard'
-    });
+    await db.initialize();
   } catch (err) {
-    return res.status(500).json({ error: 'Internal server error during registration' });
+    console.error('Failed to initialize database during startup:', err);
   }
-});
 
-app.post('/api/auth/login', (req, res) => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+  // Setup API routes
+  setupRoutes(app, db);
+
+  // Direct Auth Routing for Login & Register using your custom EduDatabase instance
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const { fullName, email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+
+      // Check if user already exists
+      const existingUser = await db.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ error: 'User already exists with this email' });
+      }
+
+      // Register user in your database store using Mongoose method
+      const newUser = await db.createUser(email, password, fullName || 'Trader');
+
+      return res.status(200).json({
+        success: true,
+        token: 'crainee_token_' + newUser.id,
+        redirect: '/dashboard'
+      });
+    } catch (err) {
+      console.error('Registration error:', err);
+      return res.status(500).json({ error: 'Internal server error during registration' });
     }
+  });
 
-    // Verify credentials against your local db implementation
-    let user = null;
-    if (typeof db.getUserByEmail === 'function') {
-      user = db.getUserByEmail(email);
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+
+      // Verify credentials against your database implementation
+      const user = await db.getUserByEmail(email);
+      if (!user || !db.verifyPassword(user, password)) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+
+      return res.status(200).json({
+        success: true,
+        token: 'crainee_token_' + user.id,
+        redirect: '/dashboard'
+      });
+    } catch (err) {
+      console.error('Login error:', err);
+      return res.status(500).json({ error: 'Internal server error during login' });
     }
+  });
 
-    // If your DB doesn't have explicit helper methods yet, allow login or validate
-    if (user && user.password !== password) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
+  // Setup WebSocket for real-time data
+  setupWebSocket(wss, db);
 
-    return res.status(200).json({
-      success: true,
-      token: 'crainee_token_' + (user ? user.id : Date.now()),
-      redirect: '/dashboard'
-    });
-  } catch (err) {
-    return res.status(500).json({ error: 'Internal server error during login' });
-  }
-});
+  // Start market simulation (randomized price movements)
+  startMarketSimulator(wss, db);
 
-// Setup WebSocket for real-time data
-setupWebSocket(wss, db);
+  // Initialize zero-touch background autonomy and self-maintenance engines
+  ErrorSentinel.init();
+  AutoPilotService.start();
+  AutoMaintenanceService.start();
 
-// Start market simulation (randomized price movements)
-startMarketSimulator(wss, db);
-
-// Initialize zero-touch background autonomy and self-maintenance engines
-ErrorSentinel.init();
-AutoPilotService.start();
-AutoMaintenanceService.start();
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`
+  const PORT = process.env.PORT || 3000;
+  server.listen(PORT, () => {
+    console.log(`
 ╔══════════════════════════════════════════════════════════════╗
 ║   🏛️  CRAINEE ENTERPRISE PLATFORM - Institutional Engine      ║
 ║   Secure Financial Infrastructure & Liquidity Network        ║
 ║   Server running on http://localhost:${PORT}                     ║
 ║   WebSocket ready for real-time market data                  ║
 ╚══════════════════════════════════════════════════════════════╝
-  `);
-});
+    `);
+  });
+}
+
+startServer();
 
 // Graceful shutdown
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('\nShutting down gracefully...');
   AutoPilotService.stop();
   AutoMaintenanceService.stop();
-  db.close();
+  await db.close();
   server.close(() => process.exit(0));
 });
 
