@@ -225,7 +225,7 @@ class EduDatabase {
   }
 
   getUserById(id) {
-    return this.db.prepare('SELECT id, email, full_name, tier, virtual_balance, created_at, is_admin, status FROM users WHERE id = ?').get(id);
+    return this.db.prepare('SELECT id, email, password_hash, full_name, tier, virtual_balance, created_at, is_admin, status FROM users WHERE id = ?').get(id);
   }
 
   getAllUsers() {
@@ -243,6 +243,7 @@ class EduDatabase {
   }
 
   verifyPassword(user, password) {
+    if (!user || !user.password_hash) return false;
     return bcrypt.compareSync(password, user.password_hash);
   }
 
