@@ -19,6 +19,7 @@ const wss = new WebSocket.Server({ server });
 
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // Added to correctly parse form submissions and prevent registration lookup bugs
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(require('cors')());
 
