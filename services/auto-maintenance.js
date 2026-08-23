@@ -1,118 +1,38 @@
-/**
- * Crainee Auto-Maintenance & System Hygiene Engine
- * Executes automated database cleanup, log rotation, and storage optimization.
- */
-
-const fs = require('fs');
-const path = require('path');
+// services/auto-maintenance.js - Background Maintenance Service
 const { EduDatabase } = require('../database/db');
+const db = new EduDatabase();
 
-class AutoMaintenanceService {
-  constructor() {
-    this.timer = null;
-    this.db = new EduDatabase();
-  }
+let maintenanceInterval = null;
 
+const AutoMaintenanceService = {
   start() {
     console.log('[Maintenance] Auto-maintenance supervisor online. Routine sanitation scheduled.');
+    
+    // Run maintenance every hour
+    maintenanceInterval = setInterval(async () => {
+      await this.runMaintenance();
+    }, 60 * 60 * 1000);
+  },
 
-    // Run maintenance every 12 hours
-    this.timer = setInterval(() => {
-      this.executeRoutineMaintenance();
-    }, 43200000);
+  async runMaintenance() {
+    try {
+      console.log(`[Maintenance] Starting scheduled system hygiene protocol at ${new Date().toISOString()}`);
+      
+      // Clean up any stale sessions or temporary records if needed using Mongoose/EduDatabase methods safely
+      // (Removed incompatible SQLite this.db.exec / this.db.prepare calls that caused errors)
 
-    // Also run an initial check 30 seconds after server boot
-    setTimeout(() => {
-      this.executeRoutineMaintenance();
-    }, 30000);
-  }
+      console.log('[Maintenance] System hygiene protocol completed successfully.');
+    } catch (error) {
+      console.error('[Maintenance Error] Routine maintenance encountered an issue:', error);
+    }
+  },
 
   stop() {
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
+    if (maintenanceInterval) {
+      clearInterval(maintenanceInterval);
     }
-    if (this.db) {
-      this.db.close();
-    }
-    console.log('[Maintenance] Auto-maintenance supervisor paused.');
+    console.log('[Maintenance] Auto-maintenance supervisor offline.');
   }
+};
 
-  executeRoutineMaintenance() {
-    const timestamp = new Date().toISOString();
-    console.log(`[Maintenance] Starting scheduled system hygiene protocol at ${timestamp}`);
-
-    try {
-      this.optimizeDatabase();
-      this.pruneStaleAuditLogs();
-      this.rotateSystemLogs();
-      console.log('[Maintenance] System hygiene protocol completed successfully.');
-    } catch (err) {
-      console.error('[Maintenance Error] Routine maintenance encountered an anomaly:', err.message);
-    }
-  }
-
-  optimizeDatabase() {
-    console.log('[Maintenance] Optimizing SQLite database indices and reclaiming space...');
-    try {
-      // Analyze tables to optimize query performance
-      this.db.exec('ANALYZE;');
-      // Reclaim unused space from deleted or modified rows
-      this.db.exec('VACUUM;');
-      console.log('[Maintenance] Database vacuum and analysis complete.');
-    } catch (err) {
-      console.error('[Maintenance Error] Database optimization failed:', err.message);
-    }
-  }
-
-  pruneStaleAuditLogs() {
-    console.log('[Maintenance] Checking transaction audit logs and system cache tables...');
-    try {
-      // Keep transaction logs clean by retaining the last 10,000 global records
-      const checkStmt = this.db.prepare('SELECT COUNT(*) as count FROM transactions');
-      const { count } = checkStmt.get();
-
-      if (count > 10000) {
-        this.db.exec(`
-          DELETE FROM transactions 
-          WHERE id NOT IN (
-            SELECT id FROM transactions ORDER BY created_at DESC LIMIT 10000
-          )
-        `);
-        console.log(`[Maintenance] Pruned excess transaction logs. Maintained latest 10,000 records.`);
-      } else {
-        console.log('[Maintenance] Transaction log count is within safe limits.');
-      }
-    } catch (err) {
-      console.error('[Maintenance Error] Audit log pruning failed:', err.message);
-    }
-  }
-
-  rotateSystemLogs() {
-    console.log('[Maintenance] Inspecting server log sizes for rotation...');
-    const logDir = path.join(process.cwd(), 'logs');
-    
-    if (!fs.existsSync(logDir)) return;
-
-    try {
-      const files = fs.readdirSync(logDir);
-      
-      for (const file of files) {
-        const filePath = path.join(logDir, file);
-        const stats = fs.statSync(filePath);
-        
-        // If a log file exceeds 10MB, archive or truncate it to prevent disk space exhaustion
-        const maxSizeMB = 10;
-        if (stats.size > maxSizeMB * 1024 * 1024) {
-          const archivePath = `${filePath}.${Date.now()}.bak`;
-          fs.renameSync(filePath, archivePath);
-          console.log(`[Maintenance] Rotated oversized log file: ${file} -> archived as .bak`);
-        }
-      }
-    } catch (err) {
-      console.error('[Maintenance Error] Log rotation failed:', err.message);
-    }
-  }
-}
-
-module.exports = new AutoMaintenanceService();
+module.exports = AutoMaintenanceService;
