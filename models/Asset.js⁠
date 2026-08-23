@@ -1,9 +1,9 @@
+// models/Asset.js
 const mongoose = require('mongoose');
 
 const assetSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  symbol: { type: String, required: true, unique: true },
-  name: { type: String, required: true },
+  symbol: { type: String, required: true, unique: true, uppercase: true, trim: true, index: true },
+  name: { type: String, required: true, trim: true },
   type: { type: String, required: true },
   current_price: { type: Number, required: true },
   price_24h_ago: { type: Number, required: true },
@@ -11,6 +11,12 @@ const assetSchema = new mongoose.Schema({
   high_24h: { type: Number },
   low_24h: { type: Number },
   updated_at: { type: Date, default: Date.now }
+});
+
+// Automatically update the updated_at timestamp on save
+assetSchema.pre('save', function(next) {
+  this.updated_at = Date.now();
+  next();
 });
 
 module.exports = mongoose.models.Asset || mongoose.model('Asset', assetSchema);
