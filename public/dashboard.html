@@ -178,6 +178,10 @@
         </header>
     </div>
 
+    <!-- Required Scripts Integration -->
+    <script src="/js/websocket.js"></script>
+    <script src="/js/charts.js"></script>
+    <script src="/js/dashboard.js"></script>
     <script>
         // Interactive Mouse Ambient Light Tracking
         document.addEventListener('mousemove', (e) => {
@@ -185,6 +189,16 @@
             const y = (e.clientY / window.innerHeight) * 100;
             document.documentElement.style.setProperty('--mouse-x', `${x}%`);
             document.documentElement.style.setProperty('--mouse-y', `${y}%`);
+        });
+
+        // Hide Loading Screen on Window Load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loader = document.getElementById('loadingScreen');
+                if (loader) loader.style.display = 'none';
+                const app = document.getElementById('app');
+                if (app) app.style.display = 'block';
+            }, 400);
         });
     </script>
 </body>
