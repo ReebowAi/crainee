@@ -3,102 +3,15 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 
-// Define Mongoose Schemas
-
-const userSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  password_hash: { type: String, required: true },
-  full_name: { type: String },
-  tier: { type: String, default: 'Bronze' },
-  virtual_balance: { type: Number, default: 10000.00 },
-  created_at: { type: Date, default: Date.now },
-  last_login: { type: Date },
-  is_admin: { type: Number, default: 0 },
-  status: { type: String, default: 'active' }
-});
-
-const assetSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  symbol: { type: String, required: true, unique: true },
-  name: { type: String, required: true },
-  type: { type: String, required: true }, // 'crypto', 'stock', 'forex'
-  current_price: { type: Number, required: true },
-  price_24h_ago: { type: Number, required: true },
-  volume_24h: { type: Number, default: 0 },
-  high_24h: { type: Number },
-  low_24h: { type: Number },
-  updated_at: { type: Date, default: Date.now }
-});
-
-const orderBookSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  asset_id: { type: String, required: true },
-  side: { type: String, required: true }, // 'buy' or 'sell'
-  price: { type: Number, required: true },
-  quantity: { type: Number, required: true },
-  user_id: { type: String, default: null },
-  is_system: { type: Number, default: 1 }, // 1 = simulated, 0 = real user
-  created_at: { type: Date, default: Date.now }
-});
-
-const userHoldingSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  user_id: { type: String, required: true },
-  asset_id: { type: String, required: true },
-  quantity: { type: Number, default: 0 },
-  avg_buy_price: { type: Number, default: 0 }
-});
-userHoldingSchema.index({ user_id: 1, asset_id: 1 }, { unique: true });
-
-const transactionSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  user_id: { type: String, required: true },
-  asset_id: { type: String, required: true },
-  type: { type: String, required: true }, // 'buy', 'sell', 'deposit', 'withdrawal_blocked'
-  quantity: { type: Number },
-  price: { type: Number },
-  total_value: { type: Number },
-  status: { type: String, default: 'completed' }, // 'completed', 'blocked', 'pending'
-  block_reason: { type: String, default: null },
-  metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
-  created_at: { type: Date, default: Date.now }
-});
-
-const adminSettingSchema = new mongoose.Schema({
-  key: { type: String, required: true, unique: true },
-  value: { type: String, required: true },
-  description: { type: String },
-  updated_at: { type: Date, default: Date.now }
-});
-
-const tickerMessageSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  message: { type: String, required: true },
-  is_active: { type: Number, default: 1 },
-  created_at: { type: Date, default: Date.now }
-});
-
-const withdrawalBlockSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  tier: { type: String, required: true }, // 'Bronze', 'Silver', 'Gold', 'VIP', 'all'
-  min_amount: { type: Number, default: 0 },
-  max_amount: { type: Number, default: 999999999 },
-  error_message: { type: String, required: true },
-  compliance_message: { type: String },
-  is_active: { type: Number, default: 1 },
-  created_at: { type: Date, default: Date.now }
-});
-
-// Compile models
-const User = mongoose.model('User', userSchema);
-const Asset = mongoose.model('Asset', assetSchema);
-const OrderBook = mongoose.model('OrderBook', orderBookSchema);
-const UserHolding = mongoose.model('UserHolding', userHoldingSchema);
-const Transaction = mongoose.model('Transaction', transactionSchema);
-const AdminSetting = mongoose.model('AdminSetting', adminSettingSchema);
-const TickerMessage = mongoose.model('TickerMessage', tickerMessageSchema);
-const WithdrawalBlock = mongoose.model('WithdrawalBlock', withdrawalBlockSchema);
+// Require Mongoose models from the models folder
+const User = require('../models/User');
+const Asset = require('../models/Asset');
+const OrderBook = require('../models/OrderBook');
+const UserHolding = require('../models/UserHolding');
+const Transaction = require('../models/Transaction');
+const AdminSetting = require('../models/AdminSetting');
+const TickerMessage = require('../models/TickerMessage');
+const WithdrawalBlock = require('../models/WithdrawalBlock');
 
 class EduDatabase {
   constructor() {
