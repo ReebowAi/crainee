@@ -260,6 +260,34 @@
             font-size: 0.75rem;
             margin-top: 0.25rem;
         }
+
+        /* Toast notifications container */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 12px 18px;
+            background: rgba(13, 17, 23, 0.95);
+            border: 1px solid var(--surface-border);
+            color: var(--text-main);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            animation: fadeInOut 3s ease forwards;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(10px); }
+            15% { opacity: 1; transform: translateY(0); }
+            85% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
     </style>
 </head>
 <body>
@@ -307,7 +335,7 @@
                     </div>
                 </div>
                 
-                <button type="submit" class="btn btn-primary" id="signOnBtn">Sign on</button>
+                <button type="submit" class="btn-primary" id="signOnBtn">Sign on</button>
 
                 <div class="auth-switch">
                     <span>New to Crainee?</span> <a href="#" id="switchModeRegister">Create account</a>
@@ -337,7 +365,7 @@
                     <div id="reg-password-error" class="form-text error" aria-live="polite"></div>
                 </div>
                 
-                <button type="submit" class="btn btn-primary" id="registerBtn">Create Account</button>
+                <button type="submit" class="btn-primary" id="registerBtn">Create Account</button>
 
                 <div class="auth-switch">
                     <span>Already have an account?</span> <a href="#" id="switchModeLogin">Sign on</a>
@@ -367,8 +395,20 @@
     <!-- Toast Container -->
     <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
-    <script src="/js/auth.js"></script>
     <script>
+        // Toast Notification System Helper
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
         // Interactive Ambient Mouse Light Tracking
         document.addEventListener('mousemove', (e) => {
             const x = (e.clientX / window.innerWidth) * 100;
@@ -387,7 +427,16 @@
             const salutationEl = document.getElementById('salutation');
             if(salutationEl) salutationEl.textContent = salutation;
 
-            // Password toggles
+            // Remember Username Feature Load
+            const savedEmail = localStorage.getItem('crainee_saved_email');
+            if (savedEmail) {
+                const emailInput = document.getElementById('email');
+                const rememberCheckbox = document.getElementById('remember');
+                if (emailInput) emailInput.value = savedEmail;
+                if (rememberCheckbox) rememberCheckbox.checked = true;
+            }
+
+            // Password visibility toggles
             const toggle = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
             toggle?.addEventListener('click', () => {
@@ -426,10 +475,29 @@
             // Login form submission handling to prevent refresh loops
             loginForm?.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const email = document.getElementById('email').value;
+                const email = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value;
+                const remember = document.getElementById('remember')?.checked;
                 const errorEl = document.getElementById('password-error');
+                const emailErrorEl = document.getElementById('email-error');
+                
                 errorEl.textContent = '';
+                emailErrorEl.textContent = '';
+
+                if (!email) {
+                    emailErrorEl.textContent = 'Email address is required.';
+                    return;
+                }
+                if (!password) {
+                    errorEl.textContent = 'Password is required.';
+                    return;
+                }
+
+                if (remember) {
+                    localStorage.setItem('crainee_saved_email', email);
+                } else {
+                    localStorage.removeItem('crainee_saved_email');
+                }
 
                 try {
                     const res = await fetch('/api/auth/login', {
@@ -440,28 +508,46 @@
                     const data = await res.json();
                     
                     if (!res.ok) {
-                        errorEl.textContent = data.error || 'Login failed';
+                        errorEl.textContent = data.error || 'Authentication failed.';
                         return;
                     }
 
                     if (data.token) {
                         localStorage.setItem('crainee_token', data.token);
                     }
+                    showToast('Login successful! Redirecting...', 'success');
                     window.location.href = data.redirect || '/dashboard';
                 } catch (err) {
-                    errorEl.textContent = 'Network error. Please try again.';
+                    errorEl.textContent = 'Network communication error. Please try again.';
                 }
             });
 
             // Register form submission handling
             registerForm?.addEventListener('submit', async (e) => {
-                e.preventDefault(); // Prevents default refresh loop behavior
-                const fullName = document.getElementById('regFullName').value;
-                const email = document.getElementById('regEmail').value;
+                e.preventDefault(); 
+                const fullName = document.getElementById('regFullName').value.trim();
+                const email = document.getElementById('regEmail').value.trim();
                 const password = document.getElementById('regPassword').value;
                 const errorEl = document.getElementById('reg-password-error');
+                const nameErrorEl = document.getElementById('reg-name-error');
+                const emailErrorEl = document.getElementById('reg-email-error');
                 
                 errorEl.textContent = '';
+                nameErrorEl.textContent = '';
+                emailErrorEl.textContent = '';
+
+                if (!fullName) {
+                    nameErrorEl.textContent = 'Full name is required.';
+                    return;
+                }
+                if (!email) {
+                    emailErrorEl.textContent = 'Email address is required.';
+                    return;
+                }
+                if (!password) {
+                    errorEl.textContent = 'Password is required.';
+                    return;
+                }
 
                 try {
                     const res = await fetch('/api/auth/register', {
@@ -472,28 +558,24 @@
                     const data = await res.json();
                     
                     if (!res.ok) {
-                        errorEl.textContent = data.error || 'Registration failed';
+                        errorEl.textContent = data.error || 'Registration failed.';
                         return;
                     }
 
                     if (data.token) {
                         localStorage.setItem('crainee_token', data.token);
                     }
-                    alert('Account successfully created! Redirecting to dashboard...');
+                    showToast('Account successfully created! Redirecting...', 'success');
                     window.location.href = data.redirect || '/dashboard';
                 } catch (err) {
-                    errorEl.textContent = 'Network error. Please try again.';
+                    errorEl.textContent = 'Network communication error. Please try again.';
                 }
             });
 
             // Forgot password handler fallback
             document.getElementById('forgotLink')?.addEventListener('click', (e) => {
                 e.preventDefault();
-                if (typeof showToast === 'function') {
-                    showToast('Password reset instructions will be sent to your email.', 'info');
-                } else {
-                    alert('Password reset instructions will be sent to your email.');
-                }
+                showToast('Password reset instructions will be sent to your email.', 'info');
             });
         });
     </script>
