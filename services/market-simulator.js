@@ -1,159 +1,144 @@
-// services/market-simulator.js - Simulates realistic market movements for Crainee Enterprise Platform
-const { v4: uuidv4 } = require('uuid');
+// services/market-simulator.js - Market Simulator & Order Book Engine
+const { EduDatabase } = require('../database/db');
+const db = new EduDatabase();
 
-let simulationInterval = null;
-let orderBookInterval = null;
-let tickerInterval = null;
+let simulatorInterval = null;
+let priceUpdateInterval = null;
 
-function startMarketSimulator(wss, db) {
+async function startMarketSimulator(io) {
   console.log('Starting market simulator...');
-  
-  // Get update interval from settings (default 1000ms)
-  const getPriceInterval = () => {
-    const setting = db.getSetting('price_update_interval');
-    return setting ? parseInt(setting.value) : 1000;
-  };
 
-  const getTickerInterval = () => {
-    const setting = db.getSetting('ticker_speed');
-    return setting ? parseInt(setting.value) : 3000;
-  };
+  // Ensure DB connection is active if not already
+  if (!db.isConnected) {
+    try {
+      await db.initialize();
+    } catch (err) {
+      console.error('Market simulator failed to connect to DB:', err);
+      return;
+    }
+  }
 
-  // Price simulation with realistic volatility
-  function simulatePriceMovement() {
-    const assets = db.getAllAssets();
-    
-    for (const asset of assets) {
-      // Volatility based on asset type
-      const volatility = {
-        crypto: 0.008,   // 0.8% per tick
-        stock: 0.003,    // 0.3% per tick
-        forex: 0.0005    // 0.05% per tick
-      }[asset.type] || 0.005;
+  // Get update intervals from settings or defaults
+  let tickerSpeed = 3000;
+  let priceInterval = 1000;
 
-      // Random walk with mean reversion
-      const price24hAgo = asset.price_24h_ago;
-      const currentPrice = asset.current_price;
-      const meanReversion = (price24hAgo - currentPrice) * 0.001;
-      const randomChange = (Math.random() - 0.5) * 2 * volatility * currentPrice;
-      const newPrice = currentPrice + meanReversion + randomChange;
+  try {
+    const tickerSetting = await db.getSetting('ticker_speed');
+    if (tickerSetting && tickerSetting.value) {
+      tickerSpeed = parseInt(tickerSetting.value, 10);
+    }
+    const priceSetting = await db.getSetting('price_update_interval');
+    if (priceSetting && priceSetting.value) {
+      priceInterval = parseInt(priceSetting.value, 10);
+    }
+  } catch (e) {
+    console.log('Using default simulator timings');
+  }
+
+  // Price fluctuation loop
+  priceUpdateInterval = setInterval(async () => {
+    try {
+      let assets = await db.getAllAssets();
       
-      // Ensure price stays positive and reasonable
-      const finalPrice = Math.max(newPrice, price24hAgo * 0.5);
-      
-      // Volume simulation
-      const baseVolume = asset.volume_24h / 86400; // per second
-      const volumeVariation = 0.5 + Math.random();
-      const tickVolume = baseVolume * volumeVariation * (getPriceInterval() / 1000);
-      
-      const updated = db.updateAssetPrice(asset.id, finalPrice, tickVolume);
-      
-      if (updated) {
-        // Calculate 24h change
-        const change24h = ((finalPrice - price24hAgo) / price24hAgo) * 100;
+      // Safety check to ensure assets is always an iterable array
+      if (!Array.isArray(assets)) {
+        assets = [];
+      }
+
+      for (const asset of assets) {
+        // Generate small realistic price fluctuation (-0.15% to +0.15%)
+        const changePercent = (Math.random() * 0.3 - 0.145) / 100;
+        const priceChange = asset.current_price * changePercent;
+        let newPrice = Number((asset.current_price + priceChange).toFixed(4));
         
-        // Broadcast price update
-        wss.broadcastPriceUpdate(asset.id, {
-          assetId: asset.id,
-          symbol: asset.symbol,
-          price: finalPrice,
-          change24h: change24h,
-          volume24h: updated.volume_24h,
-          high24h: updated.high_24h,
-          low24h: updated.low_24h,
-          timestamp: Date.now()
+        if (newPrice <= 0) newPrice = 0.01;
+
+        const volumeIncrement = Math.floor(Math.random() * 50000) + 1000;
+        await db.updateAssetPrice(asset.id, newPrice, volumeIncrement);
+
+        // Broadcast live price updates via WebSocket if io is present
+        if (io) {
+          io.emit('price_update', {
+            asset_id: asset.id,
+            symbol: asset.symbol,
+            current_price: newPrice,
+            volume_24h: (asset.volume_24h || 0) + volumeIncrement
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error in price update loop:', error);
+    }
+  }, priceInterval);
+
+  // Order book simulation loop
+  simulatorInterval = setInterval(async () => {
+    try {
+      let assets = await db.getAllAssets();
+      
+      // Safety check to ensure assets is always an iterable array
+      if (!Array.isArray(assets)) {
+        assets = [];
+      }
+
+      if (assets.length === 0) return;
+
+      // Pick a random asset to simulate order book activity
+      const randomAsset = assets[Math.floor(Math.random() * assets.length)];
+      const currentPrice = randomAsset.current_price;
+
+      // Generate buy and sell orders around current price
+      await db.clearOrderBook(randomAsset.id);
+
+      // Add 5 buy orders below current price
+      for (let i = 1; i <= 5; i++) {
+        const discount = (Math.random() * 0.5 + 0.1) * i;
+        const buyPrice = Number((currentPrice - discount).toFixed(2));
+        const quantity = Number((Math.random() * 10 + 0.5).toFixed(4));
+        if (buyPrice > 0) {
+          await db.addOrderBookEntry(randomAsset.id, 'buy', buyPrice, quantity, null, 1);
+        }
+      }
+
+      // Add 5 sell orders above current price
+      for (let i = 1; i <= 5; i++) {
+        const premium = (Math.random() * 0.5 + 0.1) * i;
+        const sellPrice = Number((currentPrice + premium).toFixed(2));
+        const quantity = Number((Math.random() * 10 + 0.5).toFixed(4));
+        await db.addOrderBookEntry(randomAsset.id, 'sell', sellPrice, quantity, null, 1);
+      }
+
+      // Fetch updated order book and broadcast
+      if (io) {
+        const orderBook = await db.getOrderBook(randomAsset.id);
+        io.emit('orderbook_update', {
+          asset_id: randomAsset.id,
+          symbol: randomAsset.symbol,
+          ...orderBook
         });
       }
-    }
-  }
 
-  // Order book simulation - generates realistic depth
-  function simulateOrderBook() {
-    const assets = db.getAllAssets();
-    
-    for (const asset of assets) {
-      // Clear old system orders
-      db.clearOrderBook(asset.id);
-      
-      const midPrice = asset.current_price;
-      const spread = midPrice * 0.001; // 0.1% spread
-      const tickSize = midPrice > 100 ? 0.01 : (midPrice > 1 ? 0.001 : 0.0001);
-      
-      // Generate buy orders (below mid)
-      for (let i = 1; i <= 30; i++) {
-        const price = midPrice - spread - (i * tickSize * (1 + Math.random() * 2));
-        const quantity = (Math.random() * 100 + 10) * Math.pow(0.9, i);
-        if (quantity > 0.001) {
-          db.addOrderBookEntry(asset.id, 'buy', price, quantity, null, 1);
-        }
+      // Periodically broadcast a simulated ticker message
+      if (io && Math.random() > 0.4) {
+        const tickerMsg = db.generateAITickerMessage();
+        io.emit('ticker_message', { message: tickerMsg });
       }
-      
-      // Generate sell orders (above mid)
-      for (let i = 1; i <= 30; i++) {
-        const price = midPrice + spread + (i * tickSize * (1 + Math.random() * 2));
-        const quantity = (Math.random() * 100 + 10) * Math.pow(0.9, i);
-        if (quantity > 0.001) {
-          db.addOrderBookEntry(asset.id, 'sell', price, quantity, null, 1);
-        }
-      }
-      
-      // Broadcast updated order book
-      const orderBook = db.getOrderBook(asset.id);
-      wss.broadcastOrderBook(asset.id, orderBook);
+
+    } catch (error) {
+      console.error('Error in order book simulator loop:', error);
     }
-  }
+  }, tickerSpeed);
 
-  // Ticker message rotation
-  function rotateTicker() {
-    const tickers = db.getActiveTickers();
-    if (tickers.length > 0) {
-      const randomTicker = tickers[Math.floor(Math.random() * tickers.length)];
-      wss.broadcastTicker(randomTicker.message);
-    }
-    
-    // Occasionally generate new professional ticker message
-    if (Math.random() < 0.1) { // 10% chance
-      const newTicker = db.generateAITickerMessage();
-      db.addTickerMessage(newTicker);
-      wss.broadcastTicker(newTicker);
-    }
-  }
-
-  // Market summary broadcast
-  function broadcastMarketSummary() {
-    const assets = db.getAllAssets();
-    const summary = {
-      totalAssets: assets.length,
-      gainers: assets.filter(a => a.current_price > a.price_24h_ago).length,
-      losers: assets.filter(a => a.current_price < a.price_24h_ago).length,
-      totalVolume24h: assets.reduce((sum, a) => sum + a.volume_24h, 0),
-      timestamp: Date.now()
-    };
-    wss.broadcastMarketSummary(summary);
-  }
-
-  // Start intervals
-  simulationInterval = setInterval(simulatePriceMovement, getPriceInterval());
-  orderBookInterval = setInterval(simulateOrderBook, 5000); // Update order book every 5s
-  tickerInterval = setInterval(rotateTicker, getTickerInterval());
-  
-  // Market summary every 10 seconds
-  setInterval(broadcastMarketSummary, 10000);
-
-  // Initial order book population
-  simulateOrderBook();
-  
-  // Initial broadcast
-  broadcastMarketSummary();
-
-  console.log('Market simulator running');
-  
-  // Return cleanup function
-  return () => {
-    if (simulationInterval) clearInterval(simulationInterval);
-    if (orderBookInterval) clearInterval(orderBookInterval);
-    if (tickerInterval) clearInterval(tickerInterval);
-  };
+  console.log('Market simulator running successfully.');
 }
 
-module.exports = { startMarketSimulator };
+function stopMarketSimulator() {
+  if (priceUpdateInterval) clearInterval(priceUpdateInterval);
+  if (simulatorInterval) clearInterval(simulatorInterval);
+  console.log('Market simulator stopped.');
+}
+
+module.exports = {
+  startMarketSimulator,
+  stopMarketSimulator
+};
