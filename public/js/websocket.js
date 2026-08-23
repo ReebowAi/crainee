@@ -23,7 +23,8 @@ if (typeof io !== 'undefined') {
 this.socket = io('/', {
 transports: ['websocket', 'polling'],
 reconnection: true,
-reconnectionAttempts: this.maxReconnectAttempts, reconnectionDelay: this.reconnectDelay
+reconnectionAttempts: this.maxReconnectAttempts, 
+reconnectionDelay: this.reconnectDelay
 });
 this.setupSocketIO();
 } else {
@@ -60,7 +61,8 @@ this.emit('notification:banner', data);
 });
 this.socket.on('orderbook:update', (data) => {
 this.emit('orderbook:update', data);
-}); this.socket.on('portfolio:update', (data) => {
+}); 
+this.socket.on('portfolio:update', (data) => {
 this.emit('portfolio:update', data);
 });
 this.socket.on('admin:market:paused', (data) => {
@@ -94,7 +96,8 @@ this.scheduleReconnect();
 handleError(error) {
 console.error('WebSocket error:', error);
 this.isConnecting = false;
-} handleMessage(event) {
+} 
+handleMessage(event) {
 try {
 const data = JSON.parse(event.data);
 this.emit(data.type, data.payload);
@@ -102,19 +105,17 @@ this.emit(data.type, data.payload);
 console.error('Failed to parse WS message:', err);
 }
 }
-schedule Reconnect() {
+scheduleReconnect() {
 if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-}
 console.error('Max reconnection attempts reached');
 this.emit('reconnect_failed');
 return;
-this.reconnectAttempts++;
-const delay = this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1) +
-Math.random()* 1000;
 }
-console.log(
-Reconnecting in \${delay}ms (attempt \${this.reconnectAttempts}) );
+this.reconnectAttempts++;
+const delay = this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1) + Math.random() * 1000;
+console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
 setTimeout(() => this.connect(), delay);
+}
 resubscribe() {
 for (const sub of this.subscriptions) {
 this.send(sub);
@@ -170,7 +171,8 @@ this.socket.disconnect();
 this.socket.close();
 }
 this.socket = null;
-} }
+} 
+}
 }
 // Export singleton
 window.wsManager = new WebSocketManager();
