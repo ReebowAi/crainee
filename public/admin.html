@@ -22,17 +22,38 @@
             --space-3: 0.75rem;
             --space-4: 1rem;
             --space-6: 1.5rem;
+            --sidebar-width: 280px;
+            --sidebar-collapsed: 72px;
+            --topbar-height: 64px;
+            --ambient-glow-color: rgba(59, 130, 246, 0.08);
+            --glass-bg: rgba(30, 41, 59, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --radius-md: 0.5rem;
+            --radius-full: 9999px;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-main); color: var(--text-main); line-height: 1.5; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-main); color: var(--text-main); line-height: 1.5; position: relative; background-attachment: fixed; overflow-x: hidden; }
 
-        #app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
-        @media (max-width: 768px) { #app { grid-template-columns: 1fr; } .sidebar { display: none; } }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at 50% 20%, var(--ambient-glow-color) 0%, transparent 70%),
+                        radial-gradient(circle at 10% 90%, rgba(147, 51, 234, 0.04) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        #app { display: grid; grid-template-columns: var(--sidebar-width) 1fr; min-height: 100vh; position: relative; backdrop-filter: blur(20px); }
 
         /* Sidebar */
-        .sidebar { background: var(--bg-card); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; z-index: 10; }
-        .sidebar-brand { padding: 1.5rem; font-size: 1.25rem; font-weight: bold; border-bottom: 1px solid var(--border-color); color: var(--primary); }
+        .sidebar { background: var(--bg-card); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; z-index: 10; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+        .sidebar-brand { padding: 1.5rem; font-size: 1.25rem; font-weight: bold; border-bottom: 1px solid var(--border-color); color: var(--primary); display: flex; align-items: center; justify-content: space-between; }
         .sidebar-nav { padding: 1rem 0; flex: 1; overflow-y: auto; display: flex; flex-direction: column; justify-content: space-between; }
         .list-unstyled { list-style: none; }
         .nav-item { margin-bottom: 0.25rem; }
@@ -41,7 +62,7 @@
         .sidebar-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); font-size: 0.85rem; color: var(--text-muted); }
 
         /* Main Content */
-        .main-content { padding: 2rem; overflow-y: auto; }
+        .main-content { padding: 2rem; overflow-y: auto; width: 100%; box-sizing: border-box; }
         .page { display: none; }
         .page.active { display: block; }
         .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
@@ -53,10 +74,14 @@
         .grid-2 { grid-template-columns: repeat(2, 1fr); }
         .grid-3 { grid-template-columns: repeat(3, 1fr); }
         .grid-4 { grid-template-columns: repeat(4, 1fr); }
-        @media (max-width: 1024px) { .grid-4, .grid-3 { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 1024px) { 
+            .grid-4, .grid-3 { grid-template-columns: repeat(2, 1fr); } 
+            .grid.grid-4 { grid-template-columns: repeat(2, 1fr); }
+        }
         @media (max-width: 768px) { .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; } }
 
-        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden; box-shadow: 0 10px 30px 0 rgba(0, 0, 0, 0.03), inset 0 1px 0 0 rgba(255, 255, 255, 0.05); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .card:hover { box-shadow: 0 20px 40px 0 rgba(0, 0, 0, 0.06); }
         .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; }
         .card-body { padding: 1.5rem; }
         .card-body.p-0 { padding: 0; }
@@ -109,7 +134,7 @@
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
         .modal-overlay.active { display: flex; }
         .modal { background: var(--bg-card); border: 1px solid var(--border-color); width: 100%; max-width: 500px; border-radius: 0.5rem; overflow: hidden; }
-        .modal.modal-lg { max-width: 800px; }
+        .modal.modal-lg { max-width: 900px; }
         .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         .modal-title { font-size: 1.25rem; font-weight: bold; }
         .modal-body { padding: 1.5rem; max-height: 70vh; overflow-y: auto; }
@@ -135,6 +160,81 @@
         .mb-4 { margin-bottom: 1rem; }
         .mt-4 { margin-top: 1rem; }
         .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+
+        /* Mobile Hamburger & Dynamic App Drawer Adjustments */
+        .mobile-menu-toggle {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            font-size: 1.125rem;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .mobile-back-bar {
+            display: none;
+            align-items: center;
+            gap: var(--space-2);
+            margin-bottom: var(--space-4);
+            padding: var(--space-2) var(--space-3);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            color: var(--primary);
+            width: fit-content;
+        }
+
+        @media (max-width: 768px) {
+            #app { display: block; position: relative; min-height: 100vh; overflow-x: hidden; }
+            .mobile-menu-toggle { display: inline-flex !important; }
+            
+            .sidebar { 
+                position: fixed; 
+                left: 0; 
+                top: 0; 
+                height: 100vh; 
+                width: 100vw; 
+                transform: translateX(-100%); 
+                z-index: 999; 
+                transition: transform 0.3s ease-in-out;
+                padding-top: calc(var(--topbar-height) + var(--space-4));
+                background: rgba(15, 23, 42, 0.98); 
+                backdrop-filter: blur(20px);
+            }
+            .sidebar.open { transform: translateX(0); }
+            
+            .main-content {
+                width: 100vw;
+                min-height: calc(100vh - var(--topbar-height));
+                padding: var(--space-4);
+                box-sizing: border-box;
+            }
+
+            body.mobile-view-active .sidebar {
+                transform: translateX(-100%) !important;
+            }
+
+            body.mobile-view-active .mobile-back-bar {
+                display: inline-flex;
+            }
+
+            .sidebar-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 998;
+                display: none;
+            }
+            .sidebar-overlay.active { display: block; }
+        }
     </style>
 </head>
 <body>
@@ -150,6 +250,7 @@
 <aside class="sidebar" id="sidebar">
 <div class="sidebar-brand">
     <span class="brand-text">Crainee Admin</span>
+    <button class="btn btn-ghost btn-sm" id="sidebarCloseBtn" style="display:none; color: white;">&times;</button>
 </div>
 <nav class="sidebar-nav">
 <ul class="list-unstyled">
@@ -175,8 +276,14 @@
 <!-- Dynamic Ambient Environment Glow -->
 <div class="ambient-light-glow" id="ambientLightGlow" style="position: absolute; top: -50px; left: -50px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(59,130,246,0.07) 0%, rgba(147,51,234,0.03) 50%, transparent 80%); pointer-events: none; transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 0;"></div>
 
+<!-- Mobile Toggle Bar -->
+<div class="d-flex align-center mb-4" id="mobileTopbarContainer" style="display: none;">
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰ Menu</button>
+</div>
+
 <!-- Overview Page -->
 <section id="pageOverview" class="page active" data-page="overview" style="position: relative; z-index: 1;"> 
+<div class="mobile-back-bar" id="backToMenuOverview">← Back to Menu</div>
 <header class="page-header">
 <div class="page-header-content">
 <h1 class="page-title">Command Overview</h1>
@@ -258,6 +365,7 @@ Export Users
 
 <!-- Users Management Page -->
 <section id="pageUsers" class="page" data-page="users" style="display: none; position: relative; z-index: 1;">
+<div class="mobile-back-bar" id="backToMenuUsers">← Back to Menu</div>
 <header class="page-header">
 <div class="page-header-content"><h1 class="page-title">User Management</h1><p class="page-subtitle">Inspect, modify, and manage client access parameters</p></div>
 <div class="page-header-actions d-flex gap-3">
@@ -306,6 +414,7 @@ Export Users
 
 <!-- Tiers Configuration Page -->
 <section id="pageTiers" class="page" data-page="tiers" style="display: none; position: relative; z-index: 1;">
+<div class="mobile-back-bar" id="backToMenuTiers">← Back to Menu</div>
 <header class="page-header"><div class="page-header-content"><h1 class="page-title">Tier Configuration</h1><p class="page-subtitle">Manage tier constraints, leverage limits, and permissions</p></div></header>
 <div class="grid grid-2">
 <article class="card">
@@ -341,6 +450,7 @@ Export Users
 
 <!-- Withdrawal Blocks Page -->
 <section id="pageBlocks" class="page" data-page="blocks" style="display: none; position: relative; z-index: 1;">
+<div class="mobile-back-bar" id="backToMenuBlocks">← Back to Menu</div>
 <header class="page-header"><div class="page-header-content"><h1 class="page-title">Withdrawal Block Rules</h1><p class="page-subtitle">Configure compliance safeguards & automated triggers</p></div><div class="page-header-actions"><button class="btn btn-primary" id="addBlockBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add Rule</button></div></header>
 <article class="card">
 <div class="card-body p-0">
@@ -374,6 +484,7 @@ Export Users
 
 <!-- Ticker Banners Page -->
 <section id="pageBanners" class="page" data-page="banners" style="display: none; position: relative; z-index: 1;"> 
+<div class="mobile-back-bar" id="backToMenuBanners">← Back to Menu</div>
 <header class="page-header"><div class="page-header-content"><h1 class="page-title">Ticker Banners</h1><p class="page-subtitle">Configure real-time marquee notifications</p></div><div class="page-header-actions"><button class="btn btn-primary" id="addBannerBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add Banner</button></div></header>
 <article class="card">
 <div class="card-body p-0">
@@ -418,6 +529,7 @@ Export Users
 
 <!-- Market Control Page -->
 <section id="pageMarket" class="page" data-page="market" style="display: none; position: relative; z-index: 1;">
+<div class="mobile-back-bar" id="backToMenuMarket">← Back to Menu</div>
 <header class="page-header"><div class="page-header-content"><h1 class="page-title">Market Control</h1><p class="page-subtitle">Direct market engine controls & liquidity overrides</p></div></header>
 <div class="grid grid-3">
 <article class="card">
@@ -455,6 +567,7 @@ Export Users
 
 <!-- Settings Page -->
 <section id="pageSettings" class="page" data-page="settings" style="display: none; position: relative; z-index: 1;">
+<div class="mobile-back-bar" id="backToMenuSettings">← Back to Menu</div>
 <header class="page-header"><div class="page-header-content"><h1 class="page-title">System Settings</h1><p class="page-subtitle">Global infrastructure configuration</p></div></header>
 <article class="card">
 <div class="card-header"><h2 class="h4" style="margin:0;">General Configuration</h2></div>
@@ -492,6 +605,7 @@ Export Users
 
 <!-- Audit Log Page -->
 <section id="pageAudit" class="page" data-page="audit" style="display: none; position: relative; z-index: 1;">
+<div class="mobile-back-bar" id="backToMenuAudit">← Back to Menu</div>
 <header class="page-header"><div class="page-header-content"><h1 class="page-title">Audit Log</h1><p class="page-subtitle">Immutable audit trail of administrator actions</p></div><div class="page-header-actions"><button class="btn btn-secondary" id="exportAuditBtn">Export CSV</button></div></header>
 <article class="card">
 <div class="card-body p-0">
@@ -538,6 +652,46 @@ window.addEventListener('load', () => {
     const app = document.getElementById('app');
     if (app) app.style.display = 'grid';
   }, 500);
+
+  // Mobile App Navigation Handler setup
+  const mobileToggle = document.getElementById('mobileMenuToggle');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  
+  if (mobileToggle && sidebar) {
+    mobileToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      if (overlay) overlay.classList.toggle('active');
+    });
+  }
+
+  if (overlay && sidebar) {
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+    });
+  }
+
+  // Handle mobile section switching & back bars
+  const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
+  navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('active');
+        document.body.classList.add('mobile-view-active');
+      }
+    });
+  });
+
+  const backBars = document.querySelectorAll('.mobile-back-bar');
+  backBars.forEach(bar => {
+    bar.addEventListener('click', () => {
+      document.body.classList.remove('mobile-view-active');
+      if (sidebar) sidebar.classList.add('open');
+      if (overlay) overlay.classList.add('active');
+    });
+  });
 });
 </script>
 </body>
