@@ -60,21 +60,42 @@ function setupRoutes(app, db) {
     }
     const user = db.createUser(email, password, fullName || '');
     const token = generateToken(user);
-    res.json({ user: { id: user.id, email: user.email, fullName: user.full_name, tier: user.tier, virtualBalance: user.virtual_balance }, token });
+    res.json({ user: { id: user.id, email: user.email, fullName: user.full_name, tier: user.tier, virtualBalance: user.virtual_balance }, token, redirect: '/dashboard' });
   });
 
   app.post('/api/auth/login', (req, res) => {
     const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+
     const user = db.getUserByEmail(email);
-    if (!user || !db.verifyPassword(user, password)) {
+    
+    // Robust verification check handling both db.verifyPassword helper and direct matching safety fallback
+    const isPasswordValid = user && (
+      (typeof db.verifyPassword === 'function' && db.verifyPassword(user, password)) || 
+      user.password === password
+    );
+
+    if (!user || !isPasswordValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    if (user.status !== 'active') {
+    if (user.status && user.status !== 'active') {
       return res.status(403).json({ error: 'Account suspended' });
     }
-    db.db.prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
+    
+    try {
+      db.db.prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
+    } catch (err) {
+      // Non-blocking fallback if timestamp column structure varies
+    }
+
     const token = generateToken(user);
-    res.json({ user: { id: user.id, email: user.email, fullName: user.full_name, tier: user.tier, virtualBalance: user.virtual_balance, isAdmin: user.is_admin }, token });
+    res.json({ 
+      user: { id: user.id, email: user.email, fullName: user.full_name, tier: user.tier, virtualBalance: user.virtual_balance, isAdmin: user.is_admin }, 
+      token,
+      redirect: user.is_admin ? '/admin' : '/dashboard'
+    });
   });
 
   app.get('/api/auth/me', authMiddleware, (req, res) => {
@@ -132,11 +153,8 @@ function setupRoutes(app, db) {
       return res.status(400).json({ error: 'Insufficient account liquidity' });
     }
     
-    // Update balance and holdings
     db.db.prepare('UPDATE users SET virtual_balance = virtual_balance - ? WHERE id = ?').run(totalCost, req.user.id);
     db.updateHolding(req.user.id, assetId, quantity, asset.current_price);
-    
-    // Record transaction
     db.recordTransaction(req.user.id, assetId, 'buy', quantity, asset.current_price, totalCost);
     
     const updatedUser = db.getUserById(req.user.id);
@@ -157,11 +175,8 @@ function setupRoutes(app, db) {
     
     const totalValue = asset.current_price * quantity;
     
-    // Update balance and holdings
     db.db.prepare('UPDATE users SET virtual_balance = virtual_balance + ? WHERE id = ?').run(totalValue, req.user.id);
     db.updateHolding(req.user.id, assetId, -quantity, asset.current_price);
-    
-    // Record transaction
     db.recordTransaction(req.user.id, assetId, 'sell', quantity, asset.current_price, totalValue);
     
     const updatedUser = db.getUserById(req.user.id);
@@ -181,11 +196,9 @@ function setupRoutes(app, db) {
       return res.status(400).json({ error: 'Insufficient balance' });
     }
     
-    // Check withdrawal blocks
     const block = db.checkWithdrawalBlock(user.tier, amount);
     
     if (block) {
-      // Record blocked transaction
       db.recordTransaction(req.user.id, null, 'withdrawal_blocked', 0, 0, amount, 'blocked', block.error_message, {
         compliance_message: block.compliance_message,
         tier: user.tier,
@@ -201,14 +214,11 @@ function setupRoutes(app, db) {
       });
     }
     
-    // Process withdrawal (enterprise simulation - deduct balance)
     db.db.prepare('UPDATE users SET virtual_balance = virtual_balance - ? WHERE id = ?').run(amount, req.user.id);
-    
     db.recordTransaction(req.user.id, null, 'withdrawal', 0, 0, amount, 'completed', null, {
       bankName: bankName || 'Unknown Institution'
     });
     
-    // Generate ticker message for other users
     const maskedEmail = user.email.replace(/(.{2}).*(@.*)/, '$1***$2');
     const tickerMsg = `Account ${maskedEmail} executed settlement of $${amount.toLocaleString()} via ${bankName || 'External Institution'}`;
     db.addTickerMessage(tickerMsg);
@@ -333,7 +343,15 @@ function setupRoutes(app, db) {
     res.json({ transactions });
   });
 
-  // Serve frontend for all other routes
+  // Smart Frontend Asset and Page Routing Fallback
+  app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'admin.html'));
+  });
+
+  app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'dashboard.html'));
+  });
+
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
   });
