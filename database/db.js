@@ -106,7 +106,12 @@ class EduDatabase {
   }
 
   async initialize() {
-    const mongoUri = process.env.MONGO_URI || 'mongodb+srv://Reeb456:Felix12352333@cluster0.7j6ppge.mongodb.net/crainee?retryWrites=true&w=majority&appName=Cluster0';
+    const mongoUri = process.env.MONGO_URI;
+    
+    if (!mongoUri) {
+      console.error('CRITICAL: MONGO_URI environment variable is missing!');
+      throw new Error('MONGO_URI environment variable is not defined.');
+    }
     
     try {
       await mongoose.connect(mongoUri);
