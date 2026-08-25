@@ -339,8 +339,7 @@ values });
 renderHoldingsTable(holdings) {
 const tbody = document.querySelector('#holdingsTable tbody');
 if (!holdings || holdings.length === 0) {
-tbody.innerHTML = '<tr class="empty-row"><td colspan="7" class="text-center py-5">No
-holdings yet. Start trading to build your portfolio.</td></tr>';
+tbody.innerHTML = '<tr class="empty-row"><td colspan="7" class="text-center py-5">No holdings yet. Start trading to build your portfolio.</td></tr>';
 return;
 }
 tbody.innerHTML = holdings.map(h => {
@@ -384,8 +383,7 @@ renderMoversTab(type) {
 const movers = this.marketMovers[type] || [];
 const tbody = document.getElementById('moversBody');
 if (movers.length === 0) {
-tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">No data
-available</td></tr>';
+tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">No data available</td></tr>';
 return;
 }
 tbody.innerHTML = movers.map(m => `
@@ -402,8 +400,7 @@ class="mover-volume">${this.formatNumber(m.volume24h)}</span></td>
 renderActivity(transactions) {
 const tbody = document.getElementById('activityBody');
 if (!transactions || transactions.length === 0) {
-tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No recent
-activity</td></tr>';
+tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No recent activity</td></tr>';
 return;
 }
 tbody.innerHTML = transactions.slice(0, 20).map(t => {
@@ -430,7 +427,8 @@ true)}</td>
 populateAssetSelectors() {
 const tradingSymbol = document.getElementById('tradingSymbol');
 const tradingName = document.getElementById('tradingName');
-// Find first asset const firstAsset = this.assets.find(a => a.type === 'stock') || this.assets[0];
+// Find first asset 
+const firstAsset = this.assets.find(a => a.type === 'stock') || this.assets[0];
 if (firstAsset) {
 this.currentAsset = firstAsset.symbol;
 this.currentAssetId = firstAsset.id;
@@ -729,6 +727,19 @@ this.loadDashboardData();
 console.error('Quick trade error:', err); this.showToast(err.message, 'error');
 }
 }
+// Logout handler implementation to ensure it works smoothly
+async logout() {
+try {
+await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+} catch (err) {
+console.error('Logout error:', err);
+} finally {
+window.location.href = '/';
+}
+}
+// Market data update placeholder stub to satisfy references in onMarketUpdate and loadAssets
+updateMarketData(assets) {
+// Can be customized if extra ticker views or market grids are attached
 }
 // Trading desk load
 loadTradingDesk() {
@@ -747,6 +758,7 @@ this.renderTicker();
 }
 renderTicker() {
 const container = document.getElementById('tickerContent');
+if (!container) return;
 if (this.tickerMessages.length === 0) {
 container.innerHTML = '📈 Trading desk active • Live market environment • &copy; 2026 crainee';
 return;
