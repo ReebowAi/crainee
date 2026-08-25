@@ -1,0 +1,26 @@
+name: Crainee Code Checker
+
+on: [push, pull_request]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check syntax and required files
+        run: |
+          echo "Checking essential project files..."
+          if [ ! -f "server.js" ]; then echo "Error: server.js missing"; exit 1; fi
+          if [ ! -f "public/js/dashboard.js" ]; then echo "Error: dashboard.js missing"; exit 1; fi
+          
+          echo "Checking JavaScript syntax..."
+          node -c server.js
+          node -c public/js/dashboard.js
+          echo "All checks passed successfully!"
