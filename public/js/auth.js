@@ -27,8 +27,9 @@ try {
 const res = await fetch('/api/auth/me', { credentials: 'include' });
 if (res.ok) {
 const data = await res.json();
-// Already logged in, redirect safely
-if ((window.location.pathname === '/' || window.location.pathname === '/index.html') && data.user) {
+// Already logged in, redirect safely based on role
+const currentPath = window.location.pathname;
+if ((currentPath === '/' || currentPath === '/index.html' || currentPath === '/login.html' || currentPath === '/register.html') && data.user) {
 window.location.href = data.user.isAdmin ? '/admin' : '/dashboard';
 }
 }
@@ -110,9 +111,10 @@ if (!res.ok) {
 this.showFieldErrors(form, result);
 throw new Error(result.error || 'Registration failed');
 }
-this.showToast('Account created! Redirecting to dashboard...', 'success');
+this.showToast('Account created! Redirecting...', 'success');
 setTimeout(() => {
-window.location.href = '/dashboard';
+const isAdmin = result.user && result.user.isAdmin;
+window.location.href = isAdmin ? '/admin' : '/dashboard';
 }, 800);
 } catch (err) {
 console.error('Registration error:', err);
