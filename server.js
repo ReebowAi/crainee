@@ -15,6 +15,10 @@ const ErrorSentinel = require('./services/error-sentinel.js');
 const AutoMaintenanceService = require('./services/auto-maintenance.js');
 
 const app = express();
+
+// CRITICAL FIX for Render: Trust proxy headers so secure cookies work properly behind load balancers
+app.set('trust proxy', 1);
+
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
@@ -22,7 +26,12 @@ const wss = new WebSocket.Server({ server });
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(cors());
+
+// CRITICAL FIX for CORS & Cookies: Allow credentials so session cookies persist across requests
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 
 // Initialize database
 const db = new EduDatabase();
