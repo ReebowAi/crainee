@@ -1,95 +1,43 @@
-// server.js - Main entry point
+// routes/api.js - Main API routes handler
 const express = require('express');
-const path = require('path');
-const http = require('http');
-const WebSocket = require('ws');
-const cors = require('cors');
-const { EduDatabase } = require('./database/db'); 
-const { setupRoutes } = require('./routes/api');
-const { setupWebSocket } = require('./websocket/ws-handler');
-const { startMarketSimulator } = require('./services/market-simulator');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { EduDatabase } = require('../database/db');
 
-// Import autonomy, self-healing, and maintenance services
-const AutoPilotService = require('./services/auto-pilot.js');
-const ErrorSentinel = require('./services/error-sentinel.js');
-const AutoMaintenanceService = require('./services/auto-maintenance.js');
+function setupRoutes(app, db) {
+  const JWT_SECRET = process.env.JWT_SECRET || 'crainee-secure-fallback-secret';
 
-const app = express();
+  // Middleware to authenticate JWT from cookies or headers
+  const authenticateToken = (req, res, next) => {
+    const token = req.cookies?.token || req.headers['authorization']?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
 
-// CRITICAL FIX for Render: Trust proxy headers so secure cookies work properly behind load balancers
-app.set('trust proxy', 1);
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (err) return res.status(403).json({ error: 'Invalid or expired token' });
+      req.user = user;
+      next();
+    });
+  };
 
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
-
-// CRITICAL FIX for CORS & Cookies: Allow credentials so session cookies persist across requests
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
-
-// Initialize database
-const db = new EduDatabase();
-
-async function startServer() {
-  try {
-    await db.initialize();
-  } catch (err) {
-    console.error('Failed to initialize database during startup:', err);
-    process.exit(1);
-  }
-
-  // Setup API routes (Handles authentication, users, etc. securely)
-  setupRoutes(app, db);
-
-  // Setup WebSocket for real-time data
-  setupWebSocket(wss, db);
-
-  // Start market simulation (randomized price movements)
-  startMarketSimulator(wss, db);
-
-  // Initialize zero-touch background autonomy and self-maintenance engines safely
-  try {
-    if (typeof ErrorSentinel.init === 'function') ErrorSentinel.init(db);
-    if (typeof AutoPilotService.start === 'function') AutoPilotService.start(db);
-    if (typeof AutoMaintenanceService.start === 'function') AutoMaintenanceService.start(db);
-  } catch (err) {
-    console.warn('Warning: Background autonomy service initialization error:', err);
-  }
-
-  const PORT = process.env.PORT || 3000;
-  server.listen(PORT, () => {
-    console.log(`
-╔══════════════════════════════════════════════════════════════╗
-║   🏛️  CRAINEE ENTERPRISE PLATFORM - Institutional Engine      ║
-║   Secure Financial Infrastructure & Liquidity Network        ║
-║   Server running on http://localhost:${PORT}                     ║
-║   WebSocket ready for real-time market data                  ║
-╚══════════════════════════════════════════════════════════════╝
-    `);
+  // Health check endpoint
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
+
+  // Get market assets endpoint
+  app.get('/api/market/assets', async (req, res) => {
+    try {
+      const assets = await db.getAllAssets();
+      res.json({ assets });
+    } catch (err) {
+      console.error('Error fetching market assets:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Additional API routes can be registered here as needed...
 }
 
-startServer();
-
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('\nShutting down gracefully...');
-  try {
-    if (typeof AutoPilotService.stop === 'function') AutoPilotService.stop();
-    if (typeof AutoMaintenanceService.stop === 'function') AutoMaintenanceService.stop();
-    if (db && typeof db.close === 'function') {
-      await db.close();
-    }
-  } catch (err) {
-    console.error('Error during graceful shutdown cleanup:', err);
-  }
-  server.close(() => process.exit(0));
-});
-
-module.exports = { app, server, wss, db };
+module.exports = { setupRoutes };
