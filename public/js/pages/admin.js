@@ -7,6 +7,7 @@ export class Admin {
     this.withdrawalBlocks = [];
     this.settings = [];
     this.transactions = [];
+    this.tickerMessages = [];
     this.render();
     this.bindEvents();
   }
@@ -497,10 +498,18 @@ export class Admin {
         <td><span class="badge ${u.status === 'active' ? 'badge-success' : 'badge-error'}">${u.status || 'active'}</span></td>
         <td>${new Date(u.created_at).toLocaleDateString()}</td>
         <td>
-          <button class="btn btn-ghost btn-sm" onclick="window.AdminPage?.editUser?.('${u.id}')" data-user-id="${u.id}">Edit</button>
+          <button class="btn btn-ghost btn-sm edit-user-btn" data-user-id="${u.id}">Edit</button>
         </td>
       </tr>
     `).join('');
+
+    this.container.querySelectorAll('.edit-user-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (typeof this.editUser === 'function') {
+          this.editUser(e.target.dataset.userId);
+        }
+      });
+    });
   }
   
   renderTiersTable() {
@@ -521,8 +530,8 @@ export class Admin {
         </td>
         <td class="mono">$${(u.virtual_balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
         <td>
-          <button class="btn btn-ghost btn-sm" onclick="window.AdminPage?.updateUserTier?.('${u.id}')">Update Tier</button>
-          <button class="btn btn-ghost btn-sm" onclick="window.AdminPage?.updateUserBalance?.('${u.id}')" style="margin-left: 4px;">Adjust Balance</button>
+          <button class="btn btn-ghost btn-sm update-tier-btn" data-user-id="${u.id}">Update Tier</button>
+          <button class="btn btn-ghost btn-sm adjust-bal-btn" data-user-id="${u.id}" style="margin-left: 4px;">Adjust Balance</button>
         </td>
       </tr>
     `).join('');
@@ -530,6 +539,22 @@ export class Admin {
     this.container.querySelectorAll('.tier-select').forEach(select => {
       select.addEventListener('change', (e) => {
         this.updateUserTier(e.target.dataset.userId, e.target.value);
+      });
+    });
+
+    this.container.querySelectorAll('.update-tier-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const userId = e.target.dataset.userId;
+        const select = this.container.querySelector(`.tier-select[data-user-id="${userId}"]`);
+        if (select) {
+          this.updateUserTier(userId, select.value);
+        }
+      });
+    });
+
+    this.container.querySelectorAll('.adjust-bal-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        this.updateUserBalance(e.target.dataset.userId);
       });
     });
   }
@@ -546,11 +571,24 @@ export class Admin {
         <td style="max-width: 200px;">${b.compliance_message || '-'}</td>
         <td><span class="badge ${b.is_active ? 'badge-success' : 'badge-gray'}">${b.is_active ? 'Active' : 'Inactive'}</span></td>
         <td>
-          <button class="btn btn-ghost btn-sm" onclick="window.AdminPage?.editBlock?.('${b.id}')">Edit</button>
-          <button class="btn btn-ghost btn-sm" onclick="window.AdminPage?.deleteBlock?.('${b.id}')" style="margin-left: 4px; color: var(--error);">Delete</button>
+          <button class="btn btn-ghost btn-sm edit-block-btn" data-block-id="${b.id}">Edit</button>
+          <button class="btn btn-ghost btn-sm delete-block-btn" data-block-id="${b.id}" style="margin-left: 4px; color: var(--error);">Delete</button>
         </td>
       </tr>
     `).join('');
+
+    this.container.querySelectorAll('.edit-block-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const block = this.withdrawalBlocks.find(b => b.id === e.target.dataset.blockId);
+        if (block) this.openBlockModal(block);
+      });
+    });
+
+    this.container.querySelectorAll('.delete-block-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        this.deleteBlock(e.target.dataset.blockId);
+      });
+    });
   }
   
   renderTickers() {
@@ -561,10 +599,16 @@ export class Admin {
         <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${msg}</td>
         <td>-</td>
         <td>
-          <button class="btn btn-ghost btn-sm" onclick="window.AdminPage?.deleteTicker?.(${i})" style="color: var(--error);">Remove</button>
+          <button class="btn btn-ghost btn-sm delete-ticker-btn" data-index="${i}" style="color: var(--error);">Remove</button>
         </td>
       </tr>
     `).join('');
+
+    this.container.querySelectorAll('.delete-ticker-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        this.deleteTicker(parseInt(e.target.dataset.index, 10));
+      });
+    });
   }
   
   renderAllTransactions() {
@@ -625,7 +669,7 @@ export class Admin {
     }
   }
   
-  async updateUserBalance(userId, balance) {
+  async updateUserBalance(userId) {
     const amount = prompt('Enter amount to add (use negative to deduct):');
     if (amount === null) return;
     
@@ -677,10 +721,19 @@ export class Admin {
     for (const id of selected) {
       const user = this.users.find(u => u.id === id);
       const finalAmount = type === 'set' ? amount - (user?.virtual_balance || 0) : amount;
-      await this.updateUserBalance(id, finalAmount);
+      
+      try {
+        const res = await window.API.updateUserBalance(id, finalAmount);
+        if (res.user && user) {
+          user.virtual_balance = res.user.virtual_balance;
+        }
+      } catch (err) {
+        console.error(`Failed to update balance for user ${id}`, err);
+      }
     }
     
     window.Toast.success(`Balance adjustment applied to ${selected.length} users`);
+    this.loadAllData();
   }
   
   openBlockModal(block = null) {
