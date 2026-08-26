@@ -1,4 +1,19 @@
-// public/js/router.js - Simple SPA router (continued)
+// public/js/router.js - Simple SPA router
+class Router {
+  constructor(routes = {}) {
+    this.routes = routes;
+    this.currentPath = window.location.pathname;
+
+    window.addEventListener('popstate', () => {
+      this.navigate(window.location.pathname, false);
+    });
+  }
+
+  addRoute(path, handler) {
+    this.routes[path] = handler;
+  }
+
+  navigate(path, pushState = true) {
     path = path.split('?')[0]; // Strip query params for routing
     
     this.currentPath = path;
