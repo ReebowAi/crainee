@@ -1,13 +1,17 @@
 const express = require('express');
 const path = require('path');
+const cookieParser = require('cookie-parser');
+const cors = require('cors');
+
 const app = express();
 
-// Middleware to parse JSON and URL-encoded form data
+// Middleware configuration
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-// --- Explicit Root & Static Files (Must be first to guarantee index.html loads) ---
-
+// --- Explicit Root & Static Files ---
 // Serve static files from the 'public' folder
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -57,12 +61,11 @@ app.post('/api/auth/register', (req, res) => {
 });
 
 // --- Dashboard Route Handler ---
-// This now correctly points to your dashboard.html file inside the public folder
 app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-// Fallback for any other missing routes
+// Fallback for any other unmatched routes
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
