@@ -6,10 +6,24 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from the 'public' folder
-app.use(express.static(path.join(__dirname, 'public')));
+// --- API Endpoints (Must be declared BEFORE static files and catch-all routes) ---
 
-// --- API Auth Endpoints ---
+// Health Check API Endpoint
+app.get('/api/health', (req, res) => {
+    return res.status(200).json({ status: 'ok' });
+});
+
+// Market Assets API Endpoint
+app.get('/api/market/assets', (req, res) => {
+    // TODO: Fetch market assets from your database or external service
+    return res.status(200).json({
+        success: true,
+        assets: [
+            { id: 1, name: 'Bitcoin', symbol: 'BTC', price: '65000' },
+            { id: 2, name: 'Ethereum', symbol: 'ETH', price: '3500' }
+        ]
+    });
+});
 
 // Login API Endpoint
 app.post('/api/auth/login', (req, res) => {
@@ -50,11 +64,15 @@ app.post('/api/auth/register', (req, res) => {
 // --- Dashboard & Protected Route Handlers ---
 
 app.get('/dashboard', (req, res) => {
-    // You can serve a dashboard.html file here or a simple response for now
     res.send('<!DOCTYPE html><html><head><title>Dashboard</title></head><body style="background:#05070b;color:#fff;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;"><h1>Welcome to your Crainee Trading Dashboard</h1></body></html>');
 });
 
-// Fallback to index.html for root or missing routes
+// --- Static Files & Fallback (Must be declared AFTER API routes) ---
+
+// Serve static files from the 'public' folder
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Fallback to index.html for root or missing non-API routes
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
