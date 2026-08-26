@@ -2,18 +2,34 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser');
 const { EduDatabase } = require('../database/db');
 
 function setupRoutes(app, db) {
   const JWT_SECRET = process.env.JWT_SECRET || 'crainee-secure-fallback-secret';
 
-  // CRITICAL FIX: Ensure cookie-parser is used so req.cookies works for authentication
-  app.use(cookieParser());
+  // Native helper to extract token from cookies or authorization header without external packages
+  const extractToken = (req) => {
+    // Check Authorization header first
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      return authHeader.split(' ')[1];
+    }
+    // Fallback: parse cookies natively from the cookie header string
+    const cookieHeader = req.headers['cookie'];
+    if (cookieHeader) {
+      const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        if (key && value) acc[key] = decodeURIComponent(value);
+        return acc;
+      }, {});
+      if (cookies.token) return cookies.token;
+    }
+    return null;
+  };
 
-  // Middleware to authenticate JWT from cookies or headers
+  // Middleware to authenticate JWT securely
   const authenticateToken = (req, res, next) => {
-    const token = req.cookies?.token || req.headers['authorization']?.split(' ')[1];
+    const token = extractToken(req);
     if (!token) {
       return res.status(401).json({ error: 'Authentication required' });
     }
