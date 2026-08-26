@@ -29,14 +29,12 @@ app.get('/api/market/assets', (req, res) => {
 app.post('/api/auth/login', (req, res) => {
     const { email, password } = req.body;
 
-    // Basic validation check (replace with your database check)
     if (!email || !password) {
         return res.status(400).json({ error: 'Email and password are required.' });
     }
 
     // TODO: Validate user credentials against your database here
 
-    // Simulate successful authentication and return a token + redirect path
     return res.status(200).json({
         success: true,
         token: 'sample-jwt-token-xyz123',
@@ -61,18 +59,22 @@ app.post('/api/auth/register', (req, res) => {
     });
 });
 
-// --- Dashboard & Protected Route Handlers ---
+// --- Frontend & Dashboard Route Handlers ---
 
+// Explicitly serve index.html at the root URL (/)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Dashboard Route
 app.get('/dashboard', (req, res) => {
     res.send('<!DOCTYPE html><html><head><title>Dashboard</title></head><body style="background:#05070b;color:#fff;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;"><h1>Welcome to your Crainee Trading Dashboard</h1></body></html>');
 });
 
-// --- Static Files & Fallback (Must be declared AFTER API routes) ---
-
-// Serve static files from the 'public' folder
+// --- Static Files ---
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Fallback to index.html for root or missing non-API routes
+// Fallback for any other missing routes
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
