@@ -10,7 +10,7 @@ export class Login {
     this.container.innerHTML = `
       <div class="auth-container">
         <div class="auth-branding">
-          <a href="/" class="logo">
+          <a href="/" class="logo" data-page="home">
             <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="32" height="32" rx="6" fill="currentColor"/>
               <path d="M8 20L14 14L18 17.5L24 9" stroke="#F0B90B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -33,7 +33,7 @@ export class Login {
         
         <div class="auth-form-container">
           <div class="auth-form">
-            <a href="/" class="logo" style="justify-content: center; margin-bottom: 24px;">
+            <a href="/" class="logo" style="justify-content: center; margin-bottom: 24px;" data-page="home">
               <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect width="32" height="32" rx="6" fill="currentColor"/>
                 <path d="M8 20L14 14L18 17.5L24 9" stroke="#F0B90B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -62,7 +62,7 @@ export class Login {
                   <input type="checkbox" name="remember" id="remember-me">
                   <span>Remember me</span>
                 </label>
-                <a href="/forgot-password" class="btn btn-ghost btn-sm" style="text-decoration: none;">Forgot password?</a>
+                <a href="/forgot-password" class="btn btn-ghost btn-sm" style="text-decoration: none;" data-page="forgot-password">Forgot password?</a>
               </div>
               
               <button type="submit" class="btn btn-primary w-full" style="margin-top: 8px;">
@@ -94,7 +94,7 @@ export class Login {
             <div style="text-align: center; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--gray-200);">
               <p style="color: var(--gray-600); font-size: var(--text-sm);">
                 Don't have an account? 
-                <a href="/register" class="btn btn-ghost btn-sm" style="text-decoration: none; padding: 0; font-weight: 600;">Sign Up</a>
+                <a href="/register" class="btn btn-ghost btn-sm" style="text-decoration: none; padding: 0; font-weight: 600;" data-page="register">Sign Up</a>
               </p>
             </div>
             
@@ -122,6 +122,17 @@ export class Login {
   bindEvents() {
     this.container.querySelector('#login-form')?.addEventListener('submit', (e) => this.handleSubmit(e));
     this.container.querySelector('#passkey-login')?.addEventListener('click', () => this.handlePasskey());
+
+    // Intercept spa links to prevent full reloads if router is present
+    this.container.querySelectorAll('a[data-page]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const page = link.dataset.page;
+        if (window.App && window.App.router && typeof window.App.router.navigate === 'function') {
+          e.preventDefault();
+          window.App.router.navigate('/' + (page === 'home' ? '' : page));
+        }
+      });
+    });
   }
   
   onShow() {
@@ -138,7 +149,11 @@ export class Login {
     const password = form.querySelector('#login-password').value;
     
     if (!email || !password) {
-      window.Toast.error('Please fill in all fields');
+      if (window.Toast && typeof window.Toast.error === 'function') {
+        window.Toast.error('Please fill in all fields');
+      } else {
+        alert('Please fill in all fields');
+      }
       return;
     }
     
@@ -147,31 +162,67 @@ export class Login {
     const btnLoader = submitBtn.querySelector('.btn-loader');
     
     submitBtn.disabled = true;
-    btnText.style.display = 'none';
-    btnLoader.style.display = 'inline-flex';
+    if (btnText) btnText.style.display = 'none';
+    if (btnLoader) btnLoader.style.display = 'inline-flex';
     
     try {
-      const result = await window.Auth.login(email, password);
-      if (result.success) {
-        window.Toast.success(`Welcome back, ${result.user.fullName || result.user.email}!`);
-        window.App.router.navigate('/dashboard');
+      // Support both window.Auth API or fallback to direct fetch
+      let result = null;
+      if (window.Auth && typeof window.Auth.login === 'function') {
+        result = await window.Auth.login(email, password);
       } else {
-        window.Toast.error(result.error || 'Login failed');
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Login failed');
+        result = { success: true, user: data.user };
+      }
+
+      if (result && result.success) {
+        const userName = result.user?.fullName || result.user?.email || 'User';
+        if (window.Toast && typeof window.Toast.success === 'function') {
+          window.Toast.success(`Welcome back, ${userName}!`);
+        }
+        
+        if (window.App && window.App.router && typeof window.App.router.navigate === 'function') {
+          window.App.router.navigate('/dashboard');
+        } else {
+          window.location.href = '/dashboard';
+        }
+      } else {
+        throw new Error(result?.error || 'Login failed');
       }
     } catch (err) {
-      window.Toast.error(err.message || 'An error occurred');
+      console.error('Login error:', err);
+      if (window.Toast && typeof window.Toast.error === 'function') {
+        window.Toast.error(err.message || 'An error occurred during sign in');
+      } else {
+        alert(err.message || 'An error occurred during sign in');
+      }
     } finally {
       submitBtn.disabled = false;
-      btnText.style.display = 'inline';
-      btnLoader.style.display = 'none';
+      if (btnText) btnText.style.display = 'inline';
+      if (btnLoader) btnLoader.style.display = 'none';
     }
   }
   
   handlePasskey() {
     if (window.PublicKeyCredential) {
-      window.Toast.info('Passkey authentication active');
+      if (window.Toast && typeof window.Toast.info === 'function') {
+        window.Toast.info('Passkey authentication active');
+      } else {
+        alert('Passkey authentication active');
+      }
     } else {
-      window.Toast.error('Passkeys not supported in this browser');
+      if (window.Toast && typeof window.Toast.error === 'function') {
+        window.Toast.error('Passkeys not supported in this browser');
+      } else {
+        alert('Passkeys not supported in this browser');
+      }
     }
   }
 }
