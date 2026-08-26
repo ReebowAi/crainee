@@ -40,7 +40,7 @@
     padding: 1.5rem 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5hr;
+    gap: 0.5rem;
 }
 
 .sidebar-nav-item {
