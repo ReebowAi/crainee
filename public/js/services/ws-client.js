@@ -24,16 +24,21 @@ export class WSClient {
           console.log('WebSocket connected');
           this.reconnectAttempts = 0;
           
-          // Authenticate if we have a token
-          if (window.App.token) {
-            this.send('auth', { token: window.App.token });
+          // Securely retrieve token from App or localStorage fallback
+          const token = window.App?.token || localStorage.getItem('crainee_token');
+          if (token) {
+            this.send('auth', { token });
           }
           
           resolve();
         };
         
         this.ws.onmessage = (event) => {
-          this.handleMessage(JSON.parse(event.data));
+          try {
+            this.handleMessage(JSON.parse(event.data));
+          } catch (err) {
+            console.error('Failed to parse incoming WebSocket message:', err);
+          }
         };
         
         this.ws.onclose = () => {
@@ -203,9 +208,9 @@ export class WSClient {
   }
 }
 
-// Heartbeat
+// Global safe heartbeat interval
 setInterval(() => {
-  if (window.App.ws && window.App.ws.isAuthenticated) {
+  if (window.App?.ws && window.App.ws.isAuthenticated) {
     window.App.ws.send('ping', {});
   }
 }, 30000);
