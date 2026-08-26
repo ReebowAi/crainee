@@ -55,9 +55,9 @@ async function startServer() {
 
   // Initialize zero-touch background autonomy and self-maintenance engines safely
   try {
-    ErrorSentinel.init();
-    AutoPilotService.start();
-    AutoMaintenanceService.start();
+    if (typeof ErrorSentinel.init === 'function') ErrorSentinel.init(db);
+    if (typeof AutoPilotService.start === 'function') AutoPilotService.start(db);
+    if (typeof AutoMaintenanceService.start === 'function') AutoMaintenanceService.start(db);
   } catch (err) {
     console.warn('Warning: Background autonomy service initialization error:', err);
   }
@@ -81,8 +81,8 @@ startServer();
 process.on('SIGINT', async () => {
   console.log('\nShutting down gracefully...');
   try {
-    AutoPilotService.stop();
-    AutoMaintenanceService.stop();
+    if (typeof AutoPilotService.stop === 'function') AutoPilotService.stop();
+    if (typeof AutoMaintenanceService.stop === 'function') AutoMaintenanceService.stop();
     if (db && typeof db.close === 'function') {
       await db.close();
     }
