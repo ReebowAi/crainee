@@ -6,16 +6,23 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// --- API Endpoints (Must be declared BEFORE static files and catch-all routes) ---
+// --- Explicit Root & Static Files (Must be first to guarantee index.html loads) ---
 
-// Health Check API Endpoint (Used by testing scripts)
+// Serve static files from the 'public' folder
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Force root URL (/) to explicitly serve index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// --- API Endpoints ---
+
 app.get('/api/health', (req, res) => {
     return res.status(200).json({ status: 'ok' });
 });
 
-// Market Assets API Endpoint (Used by testing scripts)
 app.get('/api/market/assets', (req, res) => {
-    // TODO: Fetch market assets from your database or external service
     return res.status(200).json({
         success: true,
         assets: [
@@ -25,17 +32,11 @@ app.get('/api/market/assets', (req, res) => {
     });
 });
 
-// Login API Endpoint
 app.post('/api/auth/login', (req, res) => {
     const { email, password } = req.body;
-
     if (!email || !password) {
         return res.status(400).json({ error: 'Email and password are required.' });
     }
-
-    // TODO: Validate user credentials against your database here
-
-    // Simulate successful authentication and return a token + redirect path
     return res.status(200).json({
         success: true,
         token: 'sample-jwt-token-xyz123',
@@ -43,17 +44,11 @@ app.post('/api/auth/login', (req, res) => {
     });
 });
 
-// Register API Endpoint
 app.post('/api/auth/register', (req, res) => {
     const { fullName, email, password } = req.body;
-
     if (!fullName || !email || !password) {
         return res.status(400).json({ error: 'All fields are required for registration.' });
     }
-
-    // TODO: Save user to your database here
-
-    // Simulate successful registration and return a token + redirect path
     return res.status(200).json({
         success: true,
         token: 'sample-jwt-token-xyz123',
@@ -61,20 +56,10 @@ app.post('/api/auth/register', (req, res) => {
     });
 });
 
-// --- Frontend & Dashboard Route Handlers ---
-
-// Explicitly serve your login/frontend page at the root URL (/)
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Dashboard Route (Matches the redirect target sent by login/register)
+// --- Dashboard Route ---
 app.get('/dashboard', (req, res) => {
     res.send('<!DOCTYPE html><html><head><title>Dashboard</title></head><body style="background:#05070b;color:#fff;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;"><h1>Welcome to your Crainee Trading Dashboard</h1></body></html>');
 });
-
-// --- Static Files ---
-app.use(express.static(path.join(__dirname, 'public')));
 
 // Fallback for any other missing routes
 app.get('*', (req, res) => {
