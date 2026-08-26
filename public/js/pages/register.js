@@ -7,6 +7,7 @@ export class Register {
   }
   
   render() {
+    if (!this.container) return;
     this.container.innerHTML = `
       <div class="auth-container">
         <div class="auth-branding">
@@ -88,7 +89,7 @@ export class Register {
               
               <button type="submit" class="btn btn-primary w-full" style="margin-top: 12px;">
                 <span class="btn-text">Create Account</span>
-                <span class="btn-loader" style="display: none;">
+                <span class="btn-loader" style="display: none; align-items: center; gap: 8px;">
                   <svg class="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
                     <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
                     <path d="M12 2a10 10 0 0 1 10 10" stroke-opacity="1"></path>
@@ -121,9 +122,10 @@ export class Register {
   }
   
   bindEvents() {
+    if (!this.container) return;
+
     this.container.querySelector('#register-form')?.addEventListener('submit', (e) => this.handleSubmit(e));
 
-    // Intercept SPA navigation links
     this.container.querySelectorAll('a[data-page]').forEach(link => {
       link.addEventListener('click', (e) => {
         const page = link.dataset.page;
@@ -136,6 +138,7 @@ export class Register {
   }
   
   onShow() {
+    if (!this.container) return;
     setTimeout(() => {
       this.container.querySelector('#reg-name')?.focus();
     }, 100);
@@ -143,6 +146,7 @@ export class Register {
   
   async handleSubmit(e) {
     e.preventDefault();
+    if (!this.container) return;
     
     const form = e.target;
     const fullName = form.querySelector('#reg-name').value.trim();
