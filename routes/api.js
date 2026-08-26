@@ -57,6 +57,47 @@ function setupRoutes(app, db) {
     }
   });
 
+  // User Registration Endpoint
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const { fullName, email, password } = req.body;
+      if (!fullName || !email || !password) {
+        return res.status(400).json({ error: 'Full name, email, and password are required' });
+      }
+
+      // Check if user already exists
+      const existingUser = await db.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ error: 'Email is already registered' });
+      }
+
+      // Create user record in database
+      const newUser = await db.createUser({ fullName, email, password });
+
+      // Generate JWT Token
+      const tokenPayload = { id: newUser.id, email: newUser.email, is_admin: newUser.is_admin, tier: newUser.tier };
+      const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '24h' });
+
+      // Set secure HTTP-only cookie
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000
+      });
+
+      res.status(201).json({ 
+        success: true, 
+        message: 'Account created successfully', 
+        token, 
+        user: { id: newUser.id, email: newUser.email, full_name: newUser.full_name, tier: newUser.tier, virtual_balance: newUser.virtual_balance, is_admin: newUser.is_admin } 
+      });
+    } catch (err) {
+      console.error('Registration error:', err);
+      res.status(500).json({ error: 'Internal server error during registration' });
+    }
+  });
+
   // User Login Endpoint (Fixes login network & communication errors)
   app.post('/api/auth/login', async (req, res) => {
     try {
