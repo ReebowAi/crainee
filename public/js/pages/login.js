@@ -7,6 +7,7 @@ export class Login {
   }
   
   render() {
+    if (!this.container) return;
     this.container.innerHTML = `
       <div class="auth-container">
         <div class="auth-branding">
@@ -67,7 +68,7 @@ export class Login {
               
               <button type="submit" class="btn btn-primary w-full" style="margin-top: 8px;">
                 <span class="btn-text">Sign In</span>
-                <span class="btn-loader" style="display: none;">
+                <span class="btn-loader" style="display: none; align-items: center; gap: 8px;">
                   <svg class="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
                     <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
                     <path d="M12 2a10 10 0 0 1 10 10" stroke-opacity="1"></path>
@@ -120,10 +121,11 @@ export class Login {
   }
   
   bindEvents() {
+    if (!this.container) return;
+
     this.container.querySelector('#login-form')?.addEventListener('submit', (e) => this.handleSubmit(e));
     this.container.querySelector('#passkey-login')?.addEventListener('click', () => this.handlePasskey());
 
-    // Intercept spa links to prevent full reloads if router is present
     this.container.querySelectorAll('a[data-page]').forEach(link => {
       link.addEventListener('click', (e) => {
         const page = link.dataset.page;
@@ -136,6 +138,7 @@ export class Login {
   }
   
   onShow() {
+    if (!this.container) return;
     setTimeout(() => {
       this.container.querySelector('#login-email')?.focus();
     }, 100);
@@ -143,6 +146,7 @@ export class Login {
   
   async handleSubmit(e) {
     e.preventDefault();
+    if (!this.container) return;
     
     const form = e.target;
     const email = form.querySelector('#login-email').value.trim();
@@ -166,7 +170,6 @@ export class Login {
     if (btnLoader) btnLoader.style.display = 'inline-flex';
     
     try {
-      // Support both window.Auth API or fallback to direct fetch
       let result = null;
       if (window.Auth && typeof window.Auth.login === 'function') {
         result = await window.Auth.login(email, password);
