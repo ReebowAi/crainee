@@ -44,6 +44,25 @@ async function startServer() {
     process.exit(1);
   }
 
+  // --- DIAGNOSTIC ENDPOINT ---
+  // Added to give full visibility into active platform health and configurations
+  app.get('/api/debug/status', async (req, res) => {
+    const diagnostics = {
+      timestamp: new Date().toISOString(),
+      node_version: process.version,
+      environment: process.env.NODE_ENV || 'development',
+      port: process.env.PORT || 3000,
+      database: {
+        connected: db ? db.isConnected : false,
+        uri_configured: !!process.env.MONGO_URI
+      },
+      jwt_secret_set: !!process.env.JWT_SECRET,
+      memory_usage: process.memoryUsage(),
+      uptime: process.uptime()
+    };
+    res.json(diagnostics);
+  });
+
   // Setup API routes (Handles authentication, users, etc. securely)
   setupRoutes(app, db);
 
