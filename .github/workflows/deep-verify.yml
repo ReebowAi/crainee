@@ -22,7 +22,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm'
 
     - name: Install Dependencies
       run: npm install
@@ -79,7 +78,7 @@ jobs:
           echo "❌ Health check failed!"
           kill $SERVER_PID
           exit 1
-        end
+        fi
 
         echo "Testing market assets API endpoint..."
         ASSETS_RES=$(curl -s http://localhost:3001/api/market/assets)
@@ -91,7 +90,7 @@ jobs:
           echo "❌ Market assets endpoint failed!"
           kill $SERVER_PID
           exit 1
-        end
+        fi
 
         echo "Shutting down test server..."
         kill $SERVER_PID
