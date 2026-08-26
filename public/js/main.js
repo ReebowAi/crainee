@@ -175,9 +175,7 @@ function renderAppShell() {
       <main class="main-content" id="main-content">
         <!-- Page content injected here -->
       </main>
-    </div>
-  `;
-}
+
       <!-- Ticker Banner -->
       <div class="ticker-banner" id="ticker-banner" style="display: none;">
         <div class="ticker-track" id="ticker-track"></div>
@@ -199,10 +197,8 @@ function renderAppShell() {
 }
 
 function initializeShellEvents() {
-  // Sidebar toggle
   const sidebar = document.getElementById('sidebar');
   const sidebarToggle = document.getElementById('sidebar-toggle');
-  const sidebarOverlay = document.getElementById('sidebar-overlay');
   const sidebarBackdrop = document.getElementById('sidebar-backdrop');
   
   if (sidebarToggle) {
@@ -219,33 +215,28 @@ function initializeShellEvents() {
     });
   }
   
-  // Navigation links
   document.querySelectorAll('[data-page]').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       const page = link.dataset.page;
       window.App.router.navigate(`/${page}`);
       
-      // Close mobile sidebar
       sidebar.classList.remove('open');
       sidebarBackdrop.classList.remove('active');
     });
   });
   
-  // Logo home link
   document.querySelector('.logo[data-link]')?.addEventListener('click', (e) => {
     e.preventDefault();
     window.App.router.navigate('/dashboard');
   });
   
-  // Main nav tabs
   document.querySelectorAll('.nav-tab[data-page]').forEach(tab => {
     tab.addEventListener('click', () => {
       window.App.router.navigate(`/${tab.dataset.page}`);
     });
   });
   
-  // User menu dropdown
   const userMenu = document.querySelector('.user-menu');
   if (userMenu) {
     userMenu.addEventListener('click', (e) => {
@@ -264,7 +255,6 @@ function updateAuthUI() {
   const adminTab = document.getElementById('admin-tab');
   
   if (window.App.user) {
-    // User logged in
     headerActions.innerHTML = `
       <div class="user-menu">
         <button class="user-btn" aria-expanded="false" aria-haspopup="true">
@@ -295,28 +285,21 @@ function updateAuthUI() {
       </div>
     `;
     
-    // Sidebar user info
     sidebarUser.style.display = 'flex';
     document.getElementById('sidebar-avatar').textContent = getInitials(window.App.user.fullName || window.App.user.email);
     document.getElementById('sidebar-name').textContent = window.App.user.fullName || window.App.user.email;
     document.getElementById('sidebar-tier').textContent = window.App.user.tier;
     document.getElementById('sidebar-tier').className = `user-tier tier-${window.App.user.tier.toLowerCase()}`;
     
-    // Show main nav
     mainNav.style.display = 'flex';
     
-    // Show admin tab if admin
     if (window.App.user.isAdmin) {
       adminTab.style.display = 'block';
     }
     
-    // Show ticker banner
     document.getElementById('ticker-banner').style.display = 'block';
-    
-    // Update active nav
     updateActiveNav();
   } else {
-    // Not logged in
     headerActions.innerHTML = `
       <a href="/login" class="btn btn-ghost" data-link>Sign In</a>
       <a href="/register" class="btn btn-primary" data-link>Get Started</a>
@@ -326,7 +309,6 @@ function updateAuthUI() {
     adminTab.style.display = 'none';
     document.getElementById('ticker-banner').style.display = 'none';
     
-    // Re-attach link listeners
     document.querySelectorAll('[data-link]').forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
@@ -393,10 +375,8 @@ async function loadUserData() {
 }
 
 function showPage(pageName) {
-  // Hide all pages
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   
-  // Get or create page component
   let pageComponent = window.App.components[pageName];
   const mainContent = document.getElementById('main-content');
   
@@ -409,7 +389,6 @@ function showPage(pageName) {
   pageComponent.element.classList.add('active');
   window.App.currentPage = pageName;
   
-  // Call onShow if exists
   if (pageComponent.onShow) {
     pageComponent.onShow();
   }
