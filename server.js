@@ -56,9 +56,10 @@ app.post('/api/auth/register', (req, res) => {
     });
 });
 
-// --- Dashboard Route ---
+// --- Dashboard Route Handler ---
+// This now correctly points to your dashboard.html file inside the public folder
 app.get('/dashboard', (req, res) => {
-    res.send('<!DOCTYPE html><html><head><title>Dashboard</title></head><body style="background:#05070b;color:#fff;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;"><h1>Welcome to your Crainee Trading Dashboard</h1></body></html>');
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
 // Fallback for any other missing routes
