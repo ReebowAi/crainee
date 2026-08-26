@@ -1,6 +1,6 @@
 // server.js - Main entry point
 const express = require('express');
-const path = path = require('path');
+const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
 const cors = require('cors');
