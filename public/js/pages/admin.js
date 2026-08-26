@@ -8,11 +8,16 @@ export class Admin {
     this.settings = [];
     this.transactions = [];
     this.tickerMessages = [];
+  }
+  
+  init() {
     this.render();
     this.bindEvents();
+    this.onShow();
   }
   
   render() {
+    if (!this.container) return;
     this.container.innerHTML = `
       <div class="page-header">
         <div>
@@ -329,6 +334,8 @@ export class Admin {
   }
   
   bindEvents() {
+    if (!this.container) return;
+    
     this.container.querySelectorAll('.admin-tab').forEach(tab => {
       tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
     });
@@ -362,9 +369,13 @@ export class Admin {
   }
   
   async onShow() {
-    if (!window.App.user?.isAdmin) {
-      window.App.router.navigate('/dashboard');
-      window.Toast.error('Admin access required');
+    if (!window.App || !window.App.user?.isAdmin) {
+      if (window.App?.router) {
+        window.App.router.navigate('/dashboard');
+      }
+      if (window.Toast) {
+        window.Toast.error('Admin access required');
+      }
       return;
     }
     
@@ -374,6 +385,8 @@ export class Admin {
   switchTab(tab) {
     this.activeTab = tab;
     
+    if (!this.container) return;
+
     this.container.querySelectorAll('.admin-tab').forEach(t => {
       t.classList.toggle('active', t.dataset.tab === tab);
     });
@@ -382,26 +395,22 @@ export class Admin {
       p.classList.toggle('active', p.id === `panel-${tab}`);
     });
     
-    if (tab === 'users') this.renderUsers();
-    else if (tab === 'tiers') this.renderTiersTable();
-    else if (tab === 'withdrawals') this.renderWithdrawalBlocks();
-    else if (tab === 'tickers') this.renderTickers();
-    else if (tab === 'transactions') this.renderAllTransactions();
-    else if (tab === 'settings') this.renderSettings();
+    this.renderCurrentTab();
   }
   
   async loadAllData() {
     try {
+      if (!window.API) return;
       const [statsRes, usersRes, settingsRes, blocksRes, tickersRes, txnsRes] = await Promise.all([
-        window.API.getAdminStats(),
-        window.API.getUsers(),
-        window.API.getSettings(),
-        window.API.getWithdrawalBlocks(),
-        window.API.getTickerMessages(),
-        window.API.getAllTransactions(500)
+        window.API.getAdminStats?.() || { stats: {} },
+        window.API.getUsers?.() || { users: [] },
+        window.API.getSettings?.() || { settings: [] },
+        window.API.getWithdrawalBlocks?.() || { blocks: [] },
+        window.API.getTickerMessages?.() || { messages: [] },
+        window.API.getAllTransactions?.(500) || { transactions: [] }
       ]);
       
-      this.renderStats(statsRes.stats);
+      this.renderStats(statsRes.stats || {});
       this.users = usersRes.users || [];
       this.settings = settingsRes.settings || [];
       this.withdrawalBlocks = blocksRes.blocks || [];
@@ -411,7 +420,7 @@ export class Admin {
       this.renderCurrentTab();
     } catch (e) {
       console.error('Admin load error:', e);
-      window.Toast.error('Failed to load admin data');
+      if (window.Toast) window.Toast.error('Failed to load admin data');
     }
   }
   
@@ -428,7 +437,10 @@ export class Admin {
   }
   
   renderStats(stats) {
+    if (!this.container) return;
     const statsGrid = this.container.querySelector('#admin-stats');
+    if (!statsGrid) return;
+
     statsGrid.innerHTML = `
       <article class="card stat-card">
         <div class="stat-label">Total Users</div>
@@ -449,26 +461,30 @@ export class Admin {
     `;
     
     const distContainer = this.container.querySelector('#tier-distribution');
-    const totalUsers = stats.totalUsers || 1;
-    
-    distContainer.innerHTML = (stats.tierDistribution || []).map(t => {
-      const pct = ((t.count / totalUsers) * 100).toFixed(1);
-      return `
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <span class="badge badge-${t.tier.toLowerCase()}" style="min-width: 80px;">${t.tier}</span>
-          <div style="flex: 1; height: 8px; background: var(--gray-200); border-radius: 4px; overflow: hidden;">
-            <div style="width: ${pct}%; height: 100%; background: var(--wf-red); border-radius: 4px; transition: width 300ms;"></div>
+    if (distContainer) {
+      const totalUsers = stats.totalUsers || 1;
+      distContainer.innerHTML = (stats.tierDistribution || []).map(t => {
+        const pct = ((t.count / totalUsers) * 100).toFixed(1);
+        return `
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span class="badge badge-${t.tier.toLowerCase()}" style="min-width: 80px;">${t.tier}</span>
+            <div style="flex: 1; height: 8px; background: var(--gray-200); border-radius: 4px; overflow: hidden;">
+              <div style="width: ${pct}%; height: 100%; background: var(--wf-red); border-radius: 4px; transition: width 300ms;"></div>
+            </div>
+            <span style="font-family: var(--font-mono); font-size: var(--text-sm); min-width: 60px; text-align: right;">${t.count} (${pct}%)</span>
           </div>
-          <span style="font-family: var(--font-mono); font-size: var(--text-sm); min-width: 60px; text-align: right;">${t.count} (${pct}%)</span>
-        </div>
-      `;
-    }).join('');
+        `;
+      }).join('');
+    }
     
-    this.renderBlockedWithdrawals(stats.blockedWithdrawals || 0);
+    this.renderBlockedWithdrawals();
   }
   
-  renderBlockedWithdrawals(count) {
+  renderBlockedWithdrawals() {
+    if (!this.container) return;
     const tbody = this.container.querySelector('#blocked-withdrawals-body');
+    if (!tbody) return;
+
     const blocked = this.transactions.filter(t => t.type === 'withdrawal_blocked').slice(0, 10);
     
     if (blocked.length === 0) {
@@ -487,7 +503,9 @@ export class Admin {
   }
   
   renderUsers() {
+    if (!this.container) return;
     const tbody = this.container.querySelector('#users-body');
+    if (!tbody) return;
     
     tbody.innerHTML = this.users.map(u => `
       <tr>
@@ -502,18 +520,12 @@ export class Admin {
         </td>
       </tr>
     `).join('');
-
-    this.container.querySelectorAll('.edit-user-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        if (typeof this.editUser === 'function') {
-          this.editUser(e.target.dataset.userId);
-        }
-      });
-    });
   }
   
   renderTiersTable() {
+    if (!this.container) return;
     const tbody = this.container.querySelector('#tiers-body');
+    if (!tbody) return;
     
     tbody.innerHTML = this.users.map(u => `
       <tr>
@@ -560,7 +572,9 @@ export class Admin {
   }
   
   renderWithdrawalBlocks() {
+    if (!this.container) return;
     const tbody = this.container.querySelector('#blocks-body');
+    if (!tbody) return;
     
     tbody.innerHTML = this.withdrawalBlocks.map(b => `
       <tr>
@@ -592,7 +606,9 @@ export class Admin {
   }
   
   renderTickers() {
+    if (!this.container) return;
     const tbody = this.container.querySelector('#tickers-body');
+    if (!tbody) return;
     
     tbody.innerHTML = this.tickerMessages.map((msg, i) => `
       <tr>
@@ -612,7 +628,10 @@ export class Admin {
   }
   
   renderAllTransactions() {
+    if (!this.container) return;
     const tbody = this.container.querySelector('#all-transactions-body');
+    if (!tbody) return;
+
     const txns = this.transactions.slice(0, 100);
     
     tbody.innerHTML = txns.map(t => {
@@ -639,7 +658,9 @@ export class Admin {
   }
   
   renderSettings() {
+    if (!this.container) return;
     const container = this.container.querySelector('#settings-list');
+    if (!container) return;
     
     container.innerHTML = this.settings.map(s => `
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; background: var(--gray-50); border-radius: var(--border-radius);">
@@ -662,10 +683,10 @@ export class Admin {
       if (res.user) {
         const user = this.users.find(u => u.id === userId);
         if (user) user.tier = tier;
-        window.Toast.success(`User tier updated to ${tier}`);
+        if (window.Toast) window.Toast.success(`User tier updated to ${tier}`);
       }
     } catch (e) {
-      window.Toast.error(e.message || 'Failed to update tier');
+      if (window.Toast) window.Toast.error(e.message || 'Failed to update tier');
     }
   }
   
@@ -675,7 +696,7 @@ export class Admin {
     
     const num = parseFloat(amount);
     if (isNaN(num)) {
-      window.Toast.error('Invalid amount');
+      if (window.Toast) window.Toast.error('Invalid amount');
       return;
     }
     
@@ -684,11 +705,11 @@ export class Admin {
       if (res.user) {
         const user = this.users.find(u => u.id === userId);
         if (user) user.virtual_balance = res.user.virtual_balance;
-        window.Toast.success(`Balance updated by $${num.toLocaleString()}`);
+        if (window.Toast) window.Toast.success(`Balance updated by $${num.toLocaleString()}`);
         this.loadAllData();
       }
     } catch (e) {
-      window.Toast.error(e.message || 'Failed to update balance');
+      if (window.Toast) window.Toast.error(e.message || 'Failed to update balance');
     }
   }
   
@@ -697,7 +718,7 @@ export class Admin {
     const selected = Array.from(this.container.querySelectorAll('#tiers-body input[type="checkbox"]:checked')).map(cb => cb.value);
     
     if (!selected.length) {
-      window.Toast.warning('No users selected');
+      if (window.Toast) window.Toast.warning('No users selected');
       return;
     }
     
@@ -705,7 +726,7 @@ export class Admin {
       await this.updateUserTier(id, tier);
     }
     
-    window.Toast.success(`Updated ${selected.length} users to ${tier}`);
+    if (window.Toast) window.Toast.success(`Updated ${selected.length} users to ${tier}`);
   }
   
   async bulkUpdateBalance() {
@@ -714,7 +735,7 @@ export class Admin {
     const selected = Array.from(this.container.querySelectorAll('#tiers-body input[type="checkbox"]:checked')).map(cb => cb.value);
     
     if (!selected.length) {
-      window.Toast.warning('No users selected');
+      if (window.Toast) window.Toast.warning('No users selected');
       return;
     }
     
@@ -732,13 +753,16 @@ export class Admin {
       }
     }
     
-    window.Toast.success(`Balance adjustment applied to ${selected.length} users`);
+    if (window.Toast) window.Toast.success(`Balance adjustment applied to ${selected.length} users`);
     this.loadAllData();
   }
   
   openBlockModal(block = null) {
+    if (!this.container) return;
     const modal = this.container.querySelector('#block-modal');
     const form = this.container.querySelector('#block-form');
+    if (!modal || !form) return;
+
     form.reset();
     
     if (block) {
@@ -758,11 +782,13 @@ export class Admin {
   }
   
   closeBlockModal() {
-    this.container.querySelector('#block-modal').classList.remove('active');
+    if (!this.container) return;
+    this.container.querySelector('#block-modal')?.classList.remove('active');
   }
   
   async saveBlock(e) {
     e.preventDefault();
+    if (!this.container) return;
     
     const id = this.container.querySelector('#block-id').value;
     const data = {
@@ -776,16 +802,16 @@ export class Admin {
     try {
       if (id) {
         await window.API.updateWithdrawalBlock(id, data);
-        window.Toast.success('Block rule updated');
+        if (window.Toast) window.Toast.success('Block rule updated');
       } else {
         await window.API.addWithdrawalBlock(data);
-        window.Toast.success('Block rule added');
+        if (window.Toast) window.Toast.success('Block rule added');
       }
       
       this.closeBlockModal();
       await this.loadAllData();
     } catch (e) {
-      window.Toast.error(e.message || 'Failed to save block rule');
+      if (window.Toast) window.Toast.error(e.message || 'Failed to save block rule');
     }
   }
   
@@ -794,40 +820,43 @@ export class Admin {
     
     try {
       await window.API.deleteWithdrawalBlock(id);
-      window.Toast.success('Block rule deleted');
+      if (window.Toast) window.Toast.success('Block rule deleted');
       await this.loadAllData();
     } catch (e) {
-      window.Toast.error(e.message || 'Failed to delete');
+      if (window.Toast) window.Toast.error(e.message || 'Failed to delete');
     }
   }
   
   openTickerModal() {
-    this.container.querySelector('#ticker-form').reset();
-    this.container.querySelector('#ticker-modal').classList.add('active');
+    if (!this.container) return;
+    this.container.querySelector('#ticker-form')?.reset();
+    this.container.querySelector('#ticker-modal')?.classList.add('active');
   }
   
   closeTickerModal() {
-    this.container.querySelector('#ticker-modal').classList.remove('active');
+    if (!this.container) return;
+    this.container.querySelector('#ticker-modal')?.classList.remove('active');
   }
   
   async saveTicker(e) {
     e.preventDefault();
+    if (!this.container) return;
     
     const message = this.container.querySelector('#ticker-message').value;
     
     try {
       await window.API.addTickerMessage(message);
-      window.Toast.success('Ticker message added');
+      if (window.Toast) window.Toast.success('Ticker message added');
       this.closeTickerModal();
       await this.loadAllData();
     } catch (e) {
-      window.Toast.error(e.message || 'Failed to add ticker');
+      if (window.Toast) window.Toast.error(e.message || 'Failed to add ticker');
     }
   }
   
   async deleteTicker(index) {
     this.tickerMessages.splice(index, 1);
-    window.Toast.success('Ticker removed');
+    if (window.Toast) window.Toast.success('Ticker removed');
     this.renderTickers();
   }
   
@@ -835,27 +864,26 @@ export class Admin {
     try {
       const res = await window.API.generateTickerMessages(10);
       if (res.messages) {
-        window.Toast.success(`Generated ${res.messages.length} AI ticker messages`);
+        if (window.Toast) window.Toast.success(`Generated ${res.messages.length} AI ticker messages`);
         await this.loadAllData();
       }
     } catch (e) {
-      window.Toast.error(e.message || 'Failed to generate tickers');
+      if (window.Toast) window.Toast.error(e.message || 'Failed to generate tickers');
     }
   }
   
   async updateSetting(key, value) {
     try {
       await window.API.updateSetting(key, value);
-      window.Toast.success(`Setting ${key} updated`);
+      if (window.Toast) window.Toast.success(`Setting ${key} updated`);
     } catch (e) {
-      window.Toast.error(e.message || 'Failed to update setting');
+      if (window.Toast) window.Toast.error(e.message || 'Failed to update setting');
     }
   }
   
   formatTime(dateString) {
+    if (!dateString) return '--';
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
   }
 }
-
-window.AdminPage = new Admin(document.createElement('div'));
