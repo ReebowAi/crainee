@@ -65,8 +65,8 @@ jobs:
         node server.js &
         SERVER_PID=$!
         
-        # Give server a few seconds to boot up and initialize SQLite DB
-        sleep 4
+        # Give server enough time to boot up and initialize database connections
+        sleep 8
 
         echo "Testing /api/health endpoint..."
         HEALTH_RES=$(curl -s http://localhost:3001/api/health)
