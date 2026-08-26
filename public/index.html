@@ -439,7 +439,8 @@
             // Password visibility toggles
             const toggle = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
-            toggle?.addEventListener('click', () => {
+            toggle?.addEventListener('click', (e) => {
+                e.preventDefault();
                 const type = passwordInput.type === 'password' ? 'text' : 'password';
                 passwordInput.type = type;
                 toggle.textContent = type === 'password' ? 'Show' : 'Hide';
@@ -447,7 +448,8 @@
 
             const toggleReg = document.getElementById('toggleRegPassword');
             const regPasswordInput = document.getElementById('regPassword');
-            toggleReg?.addEventListener('click', () => {
+            toggleReg?.addEventListener('click', (e) => {
+                e.preventDefault();
                 const type = regPasswordInput.type === 'password' ? 'text' : 'password';
                 regPasswordInput.type = type;
                 toggleReg.textContent = type === 'password' ? 'Show' : 'Hide';
