@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crainee System Diagnostics</title>
+    <style>
+        body { background: #0f172a; color: #f8fafc; font-family: monospace; padding: 20px; }
+        pre { background: #1e293b; padding: 20px; border-radius: 8px; border: 1px solid #334155; }
+        h1 { color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Crainee System Diagnostics & Logs</h1>
+    <p>Live health and configuration check for your platform:</p>
+    <pre id="output">Loading diagnostics...</pre>
+
+    <script>
+        async function fetchDiagnostics() {
+            try {
+                const response = await fetch('/api/debug/status');
+                const data = await response.json();
+                document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+            } catch (err) {
+                document.getElementById('output').textContent = 'Error fetching diagnostics: ' + err.message;
+            }
+        }
+        fetchDiagnostics();
+        setInterval(fetchDiagnostics, 5000); // Auto-refresh every 5 seconds
+    </script>
+</body>
+</html>
