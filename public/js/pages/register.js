@@ -10,7 +10,7 @@ export class Register {
     this.container.innerHTML = `
       <div class="auth-container">
         <div class="auth-branding">
-          <a href="/" class="logo">
+          <a href="/" class="logo" data-page="home">
             <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="32" height="32" rx="6" fill="currentColor"/>
               <path d="M8 20L14 14L18 17.5L24 9" stroke="#F0B90B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -55,7 +55,7 @@ export class Register {
         
         <div class="auth-form-container">
           <div class="auth-form">
-            <a href="/" class="logo" style="justify-content: center; margin-bottom: 24px;">
+            <a href="/" class="logo" style="justify-content: center; margin-bottom: 24px;" data-page="home">
               <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect width="32" height="32" rx="6" fill="currentColor"/>
                 <path d="M8 20L14 14L18 17.5L24 9" stroke="#F0B90B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -101,7 +101,7 @@ export class Register {
             <div style="text-align: center; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--gray-200);">
               <p style="color: var(--gray-600); font-size: var(--text-sm);">
                 Already have an account? 
-                <a href="/login" class="btn btn-ghost btn-sm" style="text-decoration: none; padding: 0; font-weight: 600;">Sign In</a>
+                <a href="/login" class="btn btn-ghost btn-sm" style="text-decoration: none; padding: 0; font-weight: 600;" data-page="login">Sign In</a>
               </p>
             </div>
             
@@ -122,6 +122,17 @@ export class Register {
   
   bindEvents() {
     this.container.querySelector('#register-form')?.addEventListener('submit', (e) => this.handleSubmit(e));
+
+    // Intercept SPA navigation links
+    this.container.querySelectorAll('a[data-page]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const page = link.dataset.page;
+        if (window.App && window.App.router && typeof window.App.router.navigate === 'function') {
+          e.preventDefault();
+          window.App.router.navigate('/' + (page === 'home' ? '' : page));
+        }
+      });
+    });
   }
   
   onShow() {
@@ -139,7 +150,20 @@ export class Register {
     const password = form.querySelector('#reg-password').value;
     
     if (!fullName || !email || !password) {
-      window.Toast.error('Please fill in all fields');
+      if (window.Toast && typeof window.Toast.error === 'function') {
+        window.Toast.error('Please fill in all fields');
+      } else {
+        alert('Please fill in all fields');
+      }
+      return;
+    }
+
+    if (password.length < 8) {
+      if (window.Toast && typeof window.Toast.error === 'function') {
+        window.Toast.error('Password must be at least 8 characters long');
+      } else {
+        alert('Password must be at least 8 characters long');
+      }
       return;
     }
     
@@ -148,23 +172,49 @@ export class Register {
     const btnLoader = submitBtn.querySelector('.btn-loader');
     
     submitBtn.disabled = true;
-    btnText.style.display = 'none';
-    btnLoader.style.display = 'inline-flex';
+    if (btnText) btnText.style.display = 'none';
+    if (btnLoader) btnLoader.style.display = 'inline-flex';
     
     try {
-      const result = await window.Auth.register({ fullName, email, password });
-      if (result.success) {
-        window.Toast.success('Account created successfully!');
-        window.App.router.navigate('/dashboard');
+      let result = null;
+      if (window.Auth && typeof window.Auth.register === 'function') {
+        result = await window.Auth.register({ fullName, email, password });
       } else {
-        window.Toast.error(result.error || 'Registration failed');
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ fullName, email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Registration failed');
+        result = { success: true, user: data.user };
+      }
+
+      if (result && result.success) {
+        if (window.Toast && typeof window.Toast.success === 'function') {
+          window.Toast.success('Account created successfully!');
+        }
+        
+        if (window.App && window.App.router && typeof window.App.router.navigate === 'function') {
+          window.App.router.navigate('/dashboard');
+        } else {
+          window.location.href = '/dashboard';
+        }
+      } else {
+        throw new Error(result?.error || 'Registration failed');
       }
     } catch (err) {
-      window.Toast.error(err.message || 'An error occurred');
+      console.error('Registration error:', err);
+      if (window.Toast && typeof window.Toast.error === 'function') {
+        window.Toast.error(err.message || 'An error occurred during registration');
+      } else {
+        alert(err.message || 'An error occurred during registration');
+      }
     } finally {
       submitBtn.disabled = false;
-      btnText.style.display = 'inline';
-      btnLoader.style.display = 'none';
+      if (btnText) btnText.style.display = 'inline';
+      if (btnLoader) btnLoader.style.display = 'none';
     }
   }
 }
