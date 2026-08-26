@@ -7,6 +7,7 @@ export class Dashboard {
   }
   
   render() {
+    if (!this.container) return;
     this.container.innerHTML = `
       <div class="page-header">
         <div>
@@ -99,7 +100,7 @@ export class Dashboard {
   }
   
   bindEvents() {
-    // Interactivity bindings for dashboard components
+    if (!this.container) return;
     const tradingLink = this.container.querySelector('a[data-page="trading"]');
     if (tradingLink && window.dashboardApp && typeof window.dashboardApp.switchPage === 'function') {
       tradingLink.addEventListener('click', (e) => {
@@ -115,12 +116,16 @@ export class Dashboard {
   
   async loadDashboardData() {
     try {
-      const [overviewRes, txnsRes] = await Promise.all([
-        fetch('/api/dashboard/overview', { credentials: 'include' }).then(r => r.ok ? r.json() : null),
-        fetch('/api/dashboard/overview', { credentials: 'include' }).then(r => r.ok ? r.json() : null) // Fallback support for generic API endpoints if needed
-      ]);
+      let overviewRes = null;
+      try {
+        const response = await fetch('/api/dashboard/overview', { credentials: 'include' });
+        if (response.ok) {
+          overviewRes = await response.json();
+        }
+      } catch (err) {
+        console.warn('Network request for overview failed, falling back to API layer.', err);
+      }
 
-      // Alternatively try direct endpoints if overview handles it
       let balance = 0;
       let tier = 'Bronze';
       let holdings = [];
@@ -137,9 +142,8 @@ export class Dashboard {
         dayPnlPct = overviewRes.portfolio.dayPnlPct || 0;
         txns = overviewRes.portfolio.recentTransactions || [];
       } else {
-        // Fallback to window.API if defined
         try {
-          const balanceRes = window.API?.getBalance ? await window.API.getBalance() : { balance: 10000, tier: 'Bronze' };
+          const balanceRes = window.API?.getBalance ? await window.API.getBalance() : { balance: 0, tier: 'Bronze' };
           balance = balanceRes.balance || 0;
           tier = balanceRes.tier || 'Bronze';
           totalValue = balance;
@@ -151,6 +155,8 @@ export class Dashboard {
       if (overviewRes && overviewRes.tierInfo && overviewRes.tierInfo.tier) {
         tier = overviewRes.tierInfo.tier;
       }
+
+      if (!this.container) return;
 
       const statsGrid = this.container.querySelector('#dashboard-stats');
       if (statsGrid) {
@@ -168,7 +174,7 @@ export class Dashboard {
           </article>
           <article class="card stat-card">
             <div class="stat-label">Account Tier</div>
-            <div class="stat-value"><span class="badge badge-tier-${tier.toLowerCase()}">${tier}</span></div>
+            <div class="stat-value"><span class="badge badge-${tier.toLowerCase()}">${tier}</span></div>
           </article>
           <article class="card stat-card">
             <div class="stat-label">Active Positions</div>
