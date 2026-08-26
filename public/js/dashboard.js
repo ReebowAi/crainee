@@ -76,10 +76,13 @@ class DashboardApp {
     if (sidebarOverlay) sidebarOverlay.addEventListener('click', () => this.closeSidebar());
 
     // Navigation
-    document.querySelectorAll('.nav-link[data-page]').forEach(link => {
+    document.querySelectorAll('.nav-link[data-page], .sidebar-nav-item[href^="/"]').forEach(link => {
       link.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.switchPage(link.dataset.page);
+        const page = link.dataset.page || link.getAttribute('href').replace('/', '');
+        if (page && document.querySelector(`.page[data-page="${page}"]`)) {
+          e.preventDefault();
+          this.switchPage(page);
+        }
       });
     });
 
@@ -239,8 +242,9 @@ class DashboardApp {
 
   // Page Navigation
   switchPage(pageId) {
-    document.querySelectorAll('.nav-link').forEach(l => {
-      l.classList.toggle('active', l.dataset.page === pageId);
+    document.querySelectorAll('.nav-link, .sidebar-nav-item').forEach(l => {
+      const target = l.dataset.page || l.getAttribute('href')?.replace('/', '');
+      l.classList.toggle('active', target === pageId);
     });
     
     document.querySelectorAll('.page').forEach(p => {
@@ -256,7 +260,8 @@ class DashboardApp {
       portfolio: { title: 'Portfolio', subtitle: 'Holdings, performance & analytics' },
       markets: { title: 'Markets', subtitle: 'Browse all available instruments' },
       transactions: { title: 'Transaction History', subtitle: 'Complete trading history' },
-      tier: { title: 'Tier Status', subtitle: 'Your progression & benefits' }
+      tier: { title: 'Tier Status', subtitle: 'Your progression & benefits' },
+      settings: { title: 'Settings', subtitle: 'Manage your account preferences' }
     };
 
     const t = titles[pageId] || { title: pageId, subtitle: '' };
@@ -305,7 +310,6 @@ class DashboardApp {
     try {
       const res = await fetch('/api/dashboard/overview', { credentials: 'include' });
       if (!res.ok) {
-        // Gracefully assemble safe fallback object if overview route isn't fully stubbed
         this.renderDashboard({
           portfolio: { totalValue: this.user?.virtualBalance || 10000, cashBalance: this.user?.virtualBalance || 10000, investedValue: 0, holdings: [], recentTransactions: [] },
           tierInfo: { progress: 25, balance: this.user?.virtualBalance || 10000, nextTier: { required: 50000 } },
@@ -619,7 +623,6 @@ class DashboardApp {
       if (!res.ok) return;
       const data = await res.json();
       if (window.chartManager && data.asset) {
-        // Fallback chart rendering or line chart initialization
         const mockLabels = ['09:00', '10:00', '11:00', '12:00', '13:00'];
         const basePrice = data.asset.current_price || 100;
         const mockValues = [basePrice * 0.98, basePrice * 0.99, basePrice, basePrice * 1.01, basePrice * 1.02];
@@ -1011,7 +1014,7 @@ class DashboardApp {
   }
 
   showSettingsModal() {
-    this.showToast('Settings panel available via profile menu', 'info');
+    this.switchPage('settings');
   }
 
   toggleChartFullscreen() {
