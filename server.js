@@ -1,6 +1,6 @@
 // server.js - Main entry point
 const express = require('express');
-const path = require('path');
+const path = path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
 const cors = require('cors');
@@ -33,6 +33,11 @@ app.use(cors({
   credentials: true
 }));
 
+// Serve dashboard route (fixes the "Cannot GET /dashboard" error after login)
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Initialize database
 const db = new EduDatabase();
 
@@ -45,7 +50,6 @@ async function startServer() {
   }
 
   // --- DIAGNOSTIC ENDPOINT ---
-  // Added to give full visibility into active platform health and configurations
   app.get('/api/debug/status', async (req, res) => {
     const diagnostics = {
       timestamp: new Date().toISOString(),
@@ -63,13 +67,13 @@ async function startServer() {
     res.json(diagnostics);
   });
 
-  // Setup API routes (Handles authentication, users, etc. securely)
+  // Setup API routes
   setupRoutes(app, db);
 
   // Setup WebSocket for real-time data
   setupWebSocket(wss, db);
 
-  // Start market simulation (randomized price movements)
+  // Start market simulation
   startMarketSimulator(wss, db);
 
   // Initialize zero-touch background autonomy and self-maintenance engines safely
